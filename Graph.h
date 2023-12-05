@@ -17,8 +17,8 @@
 #include <stack>
 #include <set>
 #include <fstream>
-#include <chrono>
 
+#include "Timer.h"
 
 using namespace std;
 
@@ -77,8 +77,9 @@ public:
         containsVertex = vector<bool>(v_max, false);
 
         if (withAllVertices) {
+            vertices = vector<int>(numVertices);
             for (int v = 0; v < numVertices; v++) {
-                vertices.push_back(v);
+                vertices[v] = v;
                 containsVertex[v] = true;
             }
             n = numVertices;
@@ -102,28 +103,21 @@ public:
             containsVertex[v] = true;
             n++;
         } else
-            throw "Vertex out of bounds or already in graph";
+            throw_with_nested("Vertex out of bounds or already in graph");
     }
 
     void addEdges(int v, vector<int> &outVertices, vector<int> &outWeights) {
         if (outVertices.size() != outWeights.size())
-            throw "Number of out vertices and weights must be equal";
-
+            throw_with_nested("Number of out vertices and weights must be equal");
+        adjacencyList[v] = vector<int>(outVertices.size());
+        weights[v] = vector<int>(outVertices.size());
         for (int i = 0; i < outVertices.size(); i++) {
-            adjacencyList[v].push_back(outVertices[i]);
-            weights[v].push_back(outWeights[i]);
+            adjacencyList[v][i] = outVertices[i];
+            weights[v][i] = outWeights[i];
         }
     }
 
     void initNullAdjListElts() {
-        // for (int i=0; i<adjacencyList.size(); i++)
-        // {
-        //     if (adjacencyList[i].size() == 0)
-        //     {
-        //         adjacencyList[i].push_back(-1);
-        //         weights[i].push_back(-1);
-        //     }
-        // }
     }
 
     void displayGraph() {
@@ -165,10 +159,8 @@ public:
                 vector<vector<int>> SCCTmp = SCCUtil(i, low, disc, stackMember, st, vertsToN, NtoVerts);
                 for (const vector<int>& SCC: SCCTmp)
                     SCCverts.push_back(SCC);
-                // SCCUtil(SCCverts, i, low, disc, stackMember, st, vertsToN);
             }
         }
-//        cout << "Finished SCC" << endl;
         return SCCverts;
     }
 

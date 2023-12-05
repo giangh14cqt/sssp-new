@@ -23,7 +23,7 @@ Graph readInputTemp(ifstream &inputFile) {
     int u, v, w;
     while (inputFile >> u >> v >> w) {
         if (u > g_size || v > g_size) {
-            // cout << "Error: vertex out of bounds" << endl;
+             cout << "Error: vertex out of bounds" << endl;
             exit(1);
         }
         if (!g.containsVertex[u])
@@ -138,8 +138,6 @@ void findReachable(Graph &g, int s, vector<bool> &reachable) {
 }
 
 vector<int> bitScaling(Graph &g) {
-    chrono::steady_clock sc;   // create an object of `steady_clock` class
-    auto start = sc.now();     // start timer
     int LDD_BASE_CASE = 10;
     int CALCULATE_SCC_PROB = 1;
     LDD_BASE_CASE = g.n / (LDD_BASE_CASE * log(g.n));
@@ -159,8 +157,6 @@ vector<int> bitScaling(Graph &g) {
     vector<int> phi(g.v_max);
 
     while (precision >= 1) {
-        // cout << "Begin: " << static_cast<chrono::duration<double>>(sc.now() - start).count() << endl;
-//        // cout << "precision: " << precision << endl;
         Graph gScaledS(g.v_max + 1, false);
         gScaledS.addVertices(g.vertices);
         gScaledS.addVertex(g.v_max);
@@ -172,7 +168,6 @@ vector<int> bitScaling(Graph &g) {
 
             for (int i = 0; i < numOutEdges; ++i) {
                 int roundedWeight = phi[u] - phi[g.adjacencyList[u][i]] + ceil(g.weights[u][i] / (double) precision);
-//                // cout << "roundedWeight: " << roundedWeight << endl;
                 if (roundedWeight < -1)
                     throw_with_nested("Bit scaling produced an edge with weight less than -1");
 
@@ -181,10 +176,6 @@ vector<int> bitScaling(Graph &g) {
             }
             gScaledS.addEdges(u, edges, weights);
         }
-        // cout << "Phrase 1: " << static_cast<chrono::duration<double>>(sc.now() - start).count() << endl;
-
-//        gScaledS.displayGraph();
-//        exit(0);
 
         vector<int> dummyEdges(g.n);
         vector<int> dummyWeights(g.n);
@@ -199,11 +190,7 @@ vector<int> bitScaling(Graph &g) {
 
         vector<bool> vectorTmp(g.v_max + 1, false);
 
-        // cout << "Phrase 2: " << static_cast<chrono::duration<double>>(sc.now() - start).count() << endl;
-
         getDistances(gScaledS, tree, dist, 0, g.v_max, vectorTmp);
-
-        // cout << "Phrase 3: " << static_cast<chrono::duration<double>>(sc.now() - start).count() << endl;
 
         if (CHECKS) {
             verifyTree(gScaledS, tree, dist, g.v_max);
@@ -234,10 +221,6 @@ vector<int> bitScaling(Graph &g) {
     }
 
     vector<int> tree = getShortestPathTree(gFinal, SRC);
-
-    auto end = sc.now();       // end timer (starting & ending is done by measuring the time at the moment the process started & ended respectively)
-    auto time_span = static_cast<chrono::duration<double>>(end - start);   // measure time span between start & end
-    // cout << "Las Vegas took: " << time_span.count() << " seconds !!!" << endl;
 
     return tree;
 }
@@ -289,21 +272,17 @@ void getDistances(Graph &g, vector<int> &tree, vector<int> &dist, int curDis, in
 }
 
 vector<int> SPMain(Graph &g_in, int s) {
+    cout << "SPMain start at: " << Timer::getDuration() << endl;
     int scaleFactor = 2 * g_in.n;
     Graph g = getScaledGraph(g_in, scaleFactor);
     int B = roundPower2(scaleFactor);
     vector<int> phi(g.v_max);
     set<vector<int>> nullErem;
-    chrono::steady_clock sc;   // create an object of `steady_clock` class
-    auto start = sc.now();     // start timer
-
+    Timer::resetDebugTimer();
     for (int i = 1; i <= logBase2(B); i++) {
-        // cout << "SPMain " << i << ' ' << static_cast<chrono::duration<double>>(sc.now() - start).count() << endl;
         nullErem.clear();
         Graph g_phi = createModifiedGB(g, 0, false, nullErem, phi);
-        // cout << "Before " << i << ' ' << static_cast<chrono::duration<double>>(sc.now() - start).count() << endl;
         vector<int> phi_i = ScaleDown(g_phi, g.n, B / (int) pow(2, i));
-        // cout << "After " << i << ' ' << static_cast<chrono::duration<double>>(sc.now() - start).count() << endl;
 
         if (CHECKS && hasNegativeEdges(g_phi, phi_i, B / (int) pow(2, i))) {
             throw_with_nested("ScaleDown failed.");
@@ -311,6 +290,7 @@ vector<int> SPMain(Graph &g_in, int s) {
 
         phi = addPhi(phi, phi_i);
     }
+    cout << "SPMainLDD lasts for: " << Timer::getDebugDuration() << endl;
 
     // create G^*
     for (int u: g.vertices) {
@@ -329,6 +309,7 @@ vector<int> SPMain(Graph &g_in, int s) {
     if (CHECKS && invalidTree(g, s, tree)) {
         throw_with_nested("SPMain get shortest path tree failed.");
     }
+    cout << "SPMain end at: " << Timer::getDuration() << endl;
 
     return tree;
 }
@@ -388,8 +369,6 @@ double logBase2(int n) {
  * algorithm does terminate, it always produces a correct output.
  */
 vector<int> ScaleDown(Graph &g, int delta, int B) {
-    chrono::steady_clock sc;   // create an object of `steady_clock` class
-    auto start = sc.now();     // start timer
     vector<int> phi_2(g.v_max);
     vector<int> emptyPhi;
     set<vector<int>> emptyRem;
@@ -398,7 +377,6 @@ vector<int> ScaleDown(Graph &g, int delta, int B) {
         double d = delta / 2.0;
         Graph g_b_nneg = createModifiedGB(g, B, true, emptyRem, emptyPhi);
 
-        // cout << "Phase 0: " << static_cast<chrono::duration<double>>(sc.now() - start).count() << endl;
         // phase 0
         vector<vector<int>> E_sep;
         if (WITH_LDD)
@@ -408,14 +386,12 @@ vector<int> ScaleDown(Graph &g, int delta, int B) {
         Graph g_B_Esep = createModifiedGB(g, B, false, E_sep_hash, emptyPhi);
         vector<vector<int>> SCCs = g_B_Esep.SCC();
 
-        // cout << "Phase 1: " << static_cast<chrono::duration<double>>(sc.now() - start).count() << endl;
         // phase 1
         vector<int> vertexToSCCMap = getVertexToSCCMap(SCCs, g.v_max);
         set<vector<int>> edgesBetweenSCCs = getEdgesBetweenSCCs(g, vertexToSCCMap);
         Graph H = createModifiedGB(g, 0, false, edgesBetweenSCCs, emptyPhi);
         vector<int> phi_1 = ScaleDown(H, delta / 2, B);
 
-        // cout << "Phase 2: " << static_cast<chrono::duration<double>>(sc.now() - start).count() << endl;
         // phase 2
         Graph g_B_E_sep_phi1 = createModifiedGB(g, B, false, E_sep_hash, phi_1);
         vector<int> phi = FixDAGEdges(g_B_E_sep_phi1, SCCs, vertexToSCCMap, edgesBetweenSCCs);
@@ -425,7 +401,6 @@ vector<int> ScaleDown(Graph &g, int delta, int B) {
             throw_with_nested("FixDAGEdges failed.");
     }
 
-    // cout << "Scale Down time: " << static_cast<chrono::duration<double>>(sc.now() - start).count() << endl;
     // phase 3
     Graph g_B_phi2 = createModifiedGB(g, B, false, emptyRem, phi_2);
     vector<int> phi_prime = ElimNeg(g_B_phi2);
@@ -433,7 +408,6 @@ vector<int> ScaleDown(Graph &g, int delta, int B) {
 
     if (CHECKS && hasNegativeEdges(g_B_phi2, phi_prime, 0))
         throw_with_nested("ElimNeg failed.");
-    // cout << "Scale Down final time: " << static_cast<chrono::duration<double>>(sc.now() - start).count() << endl;
 
     return phi_3;
 }
@@ -682,14 +656,13 @@ vector<int> ElimNeg(Graph &g) {
     inPQ[s] = true;
 
     set<int> marked;
-    int v, w;
 //    map<int, bool> tobeRemoved;
 
     while (!pq.empty()) {
         // Dijkstra Phase
         while (!pq.empty()) {
-            v = pq.top().node;
-            w = pq.top().cost;
+            int v = pq.top().node;
+            int w = pq.top().cost;
             pq.pop();
             if (w > dist[v]) {
                 continue;
@@ -707,12 +680,8 @@ vector<int> ElimNeg(Graph &g) {
                 if (edgeWeight >= 0 && (dist[v] + edgeWeight < dist[x])) {
                     marked.emplace(x);
 
-                    if (inPQ[x]) {
-//                        pq.remove(Node(x, dist[x]));
-//                        tobeRemoved[x] = true;
-                    }
                     dist[x] = dist[v] + edgeWeight;
-                    pq.emplace(x, dist[x]);
+                    pq.push(Node(x, dist[x]));
                     inPQ[x] = true;
                 }
             }
@@ -725,12 +694,8 @@ vector<int> ElimNeg(Graph &g) {
                 int edgeWeight = Gs.weights[v][i];
 
                 if (edgeWeight < 0 && (dist[v] + edgeWeight < dist[x])) {
-                    if (inPQ[x]) {
-//                        pq.remove(Node(x, dist[x]));
-//                        tobeRemoved[x] = true;
-                    }
                     dist[x] = dist[v] + edgeWeight;
-                    pq.emplace(x, dist[x]);
+                    pq.push(Node(x, dist[x]));
                     inPQ[x] = true;
                 }
             }
@@ -821,8 +786,6 @@ void updateTreeNeighbors(Graph &g, int u, vector<int> &tree,
 }
 
 vector<int> bellmanFord(Graph &g) {
-    chrono::steady_clock sc;   // create an object of `steady_clock` class
-    auto start = sc.now();     // start timer
     vector<int> dist(g.v_max);
     for (int i = 0; i < g.v_max; i++) {
         dist[i] = INT_MAX;
@@ -852,9 +815,6 @@ vector<int> bellmanFord(Graph &g) {
         }
     }
 
-    auto end = sc.now();       // end timer (starting & ending is done by measuring the time at the moment the process started & ended respectively)
-    auto time_span = static_cast<chrono::duration<double>>(end - start);   // measure time span between start & end
-    // cout << "Bellman-Ford took: " << time_span.count() << " seconds !!!" << endl;
     return dist;
 }
 

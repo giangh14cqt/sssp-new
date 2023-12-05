@@ -10,4 +10,5 @@ add_executable(SSSP_New main.cpp
         LasVegas.h
         LDD.cpp
         LasVegas.cpp
-        CustomPriorityQueue.h)
+        CustomPriorityQueue.h
+        Timer.h)

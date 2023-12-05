@@ -12,6 +12,7 @@ int main() {
         return 0;
     }
     vector<int> LasVegas;
+    Timer::startTimer();
     try {
         LasVegas = bitScaling(g);
     }

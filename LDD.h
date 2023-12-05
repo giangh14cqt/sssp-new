@@ -24,7 +24,7 @@ Each int[] in the output ArrayList has size two and represents an edge
 */
 vector<vector<int>> LDD(Graph &g, int d);
 
-vector<vector<int>> revEdges(vector<vector<int>> edges);
+vector<vector<int>> revEdges(vector<vector<int>> &edges);
 
 double calculateGeoProb(int n, int r);
 
@@ -40,9 +40,9 @@ vector<int> vertexUnion(vector<int> &set1, vector<int> &set2);
 
 void addVerticesToSet(set<int> &set, vector<int> &vertices);
 
-vector<vector<int>> edgeUnion(vector<vector<int>> set1,
-                              vector<vector<int>> set2,
-                              vector<vector<int>> set3);
+vector<vector<int>> edgeUnion(vector<vector<int>> &set1,
+                              vector<vector<int>> &set2,
+                              vector<vector<int>> &set3);
 
 void addEdgesToSet(set<vector<int>> &set, vector<vector<int>> &edges);
 

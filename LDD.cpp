@@ -35,7 +35,6 @@ vector<vector<int>> preLDD(Graph &g, int d) {
 
                 SCCSubgraph.addEdges(v, outVertices, weights);
             }
-            // SCCSubgraph.initNullAdjListElts();
 
             int src = SCC[rand() % SCC.size()];
             if (hasLargeDiameter(SCCSubgraph, src, d)) {
@@ -148,13 +147,20 @@ vector<vector<int>> LDD(Graph &g, int d) {
         Graph subGraph = getSubGraph(g_rev, ball, false);
         Graph minusSubGraph = getSubGraph(g_rev, ball, true);
 
-        return revEdges(edgeUnion(layer(g_rev, ball), preLDD(subGraph, d), preLDD(minusSubGraph, d)));
+//        return revEdges(edgeUnion(layer(g_rev, ball), preLDD(subGraph, d), preLDD(minusSubGraph, d)));
+        vector<vector<int>> layer_g_rev = layer(g_rev, ball);
+        vector<vector<int>> preLDD_subGraph = preLDD(subGraph, d);
+        vector<vector<int>> preLDD_minusSubGraph = preLDD(minusSubGraph, d);
+        layer_g_rev = revEdges(layer_g_rev);
+        preLDD_subGraph = revEdges(preLDD_subGraph);
+        preLDD_minusSubGraph = revEdges(preLDD_minusSubGraph);
+        return edgeUnion(layer_g_rev, preLDD_subGraph, preLDD_minusSubGraph);
     }
 
     throw "Error: condAndi_max[0] is not 1, 2, or 3";
 }
 
-vector<vector<int>> revEdges(vector<vector<int>> edges) {
+vector<vector<int>> revEdges(vector<vector<int>> &edges) {
     vector<vector<int>> revEdgeSet;
     revEdgeSet.reserve(edges.size());
     for (vector<int> edge: edges) {
@@ -219,14 +225,22 @@ vector<vector<int>> RandomTrim(Graph &g, Graph &g_rev, int s, int d) {
             Graph gVminusM = getSubGraph(g, m, true);
             vector<int> ball = volume(gVminusM, v, i_rnd);
             Graph GVMinusMSubGraph = getSubGraph(gVminusM, ball, false);
-            e_sep = edgeUnion(e_sep, layer(gVminusM, ball), preLDD(GVMinusMSubGraph, d));
+//            e_sep = edgeUnion(e_sep, layer(gVminusM, ball), preLDD(GVMinusMSubGraph, d));
+            vector<vector<int>> layer_gVminusM = layer(gVminusM, ball);
+            vector<vector<int>> preLDD_GVMinusMSubGraph = preLDD(GVMinusMSubGraph, d);
+            e_sep = edgeUnion(e_sep, layer_gVminusM, preLDD_GVMinusMSubGraph);
             m = vertexUnion(m, ball);
         } else if (dist[v] > 2 * d) {
             Graph gVminusM_rev = getSubGraph(g_rev, m, true);
             vector<int> ball_rev = volume(gVminusM_rev, v, i_rnd);
             Graph GVMinusMSubGraph_rev = getSubGraph(gVminusM_rev, ball_rev, false);
-            e_sep = edgeUnion(e_sep, revEdges(layer(gVminusM_rev, ball_rev)),
-                              revEdges(preLDD(GVMinusMSubGraph_rev, d)));
+//            e_sep = edgeUnion(e_sep, revEdges(layer(gVminusM_rev, ball_rev)),
+//                              revEdges(preLDD(GVMinusMSubGraph_rev, d)));
+            vector<vector<int>> layer_gVminusM_rev = layer(gVminusM_rev, ball_rev);
+            vector<vector<int>> preLDD_GVMinusMSubGraph_rev = preLDD(GVMinusMSubGraph_rev, d);
+            layer_gVminusM_rev = revEdges(layer_gVminusM_rev);
+            preLDD_GVMinusMSubGraph_rev = revEdges(preLDD_GVMinusMSubGraph_rev);
+            e_sep = edgeUnion(e_sep, layer_gVminusM_rev, preLDD_GVMinusMSubGraph_rev);
             m = vertexUnion(m, ball_rev);
         } else
             throw "Error: dist[v] and dist_rev[v] are both <= 2 * d";
@@ -292,9 +306,9 @@ void addVerticesToSet(set<int> &set, vector<int> &vertices) {
         set.insert(i);
 }
 
-vector<vector<int>> edgeUnion(vector<vector<int>> set1,
-                              vector<vector<int>> set2,
-                              vector<vector<int>> set3) {
+vector<vector<int>> edgeUnion(vector<vector<int>> &set1,
+                              vector<vector<int>> &set2,
+                              vector<vector<int>> &set3) {
     set<vector<int>> set;
     addEdgesToSet(set, set1);
     addEdgesToSet(set, set2);
