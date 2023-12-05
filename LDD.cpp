@@ -161,10 +161,12 @@ vector<vector<int>> LDD(Graph &g, int d) {
 }
 
 vector<vector<int>> revEdges(vector<vector<int>> &edges) {
-    vector<vector<int>> revEdgeSet;
-    revEdgeSet.reserve(edges.size());
-    for (vector<int> edge: edges) {
-        revEdgeSet.push_back(vector<int>{edge[1], edge[0]});
+    vector<vector<int>> revEdgeSet(edges.size());
+//    for (vector<int> edge: edges) {
+//        revEdgeSet.push_back(vector<int>{edge[1], edge[0]});
+//    }
+    for (int i = 0; i < edges.size(); i++) {
+        revEdgeSet[i] = vector<int>{edges[i][1], edges[i][0]};
     }
     return revEdgeSet;
 }
@@ -309,22 +311,26 @@ void addVerticesToSet(set<int> &set, vector<int> &vertices) {
 vector<vector<int>> edgeUnion(vector<vector<int>> &set1,
                               vector<vector<int>> &set2,
                               vector<vector<int>> &set3) {
-    set<vector<int>> set;
-    addEdgesToSet(set, set1);
-    addEdgesToSet(set, set2);
-    addEdgesToSet(set, set3);
-
-    vector<vector<int>> output;
-    output.reserve(set.size());
-    for (const vector<int> &i: set)
-        output.push_back(i);
-
-    return output;
+    set<vector<int>> set(set1.begin(), set1.end());
+    set.insert(set2.begin(), set2.end());
+    set.insert(set3.begin(), set3.end());
+    return {set.begin(), set.end()};
+//    addEdgesToSet(set, set1);
+//    addEdgesToSet(set, set2);
+//    addEdgesToSet(set, set3);
+//
+//    vector<vector<int>> output;
+//    output.reserve(set.size());
+//    for (const vector<int> &i: set)
+//        output.push_back(i);
+//
+//    return output;
 }
 
 void addEdgesToSet(set<vector<int>> &set, vector<vector<int>> &edges) {
-    for (const vector<int>& i: edges)
-        set.insert(i);
+//    for (const vector<int>& i: edges)
+//        set.insert(i);
+    set.insert(edges.begin(), edges.end());
 }
 
 int diffVertex(vector<int> &set1, vector<int> &set2, int v_max) {
@@ -386,15 +392,8 @@ vector<int> CoreOrLayerRange(Graph &g, Graph &g_rev, int s, int d) {
         if (!finished) {
             vector<int> result = oneIterationLayerRange(g, pq, settled, numSettled, farthestDistancesSeen, constant,
                                                         dist, d);
-            // cout << "Farthest distances seen: ";
             for (vector<int> i: farthestDistancesSeen)
-                // cout << i[0] << "-" << i[1] << " ";
-                // cout << endl;
-                // cout << "Result: ";
                 for (int i: result)
-                    // cout << i << " ";
-                    // cout << endl;
-                    // cout << "j: " << j << " j_rev: " << j_rev << endl;
                     if (!result.empty()) {
                         if (result[0] == 1) {
                             j = result[1];

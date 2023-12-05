@@ -136,7 +136,6 @@ public:
     // Run Tarjan's algorithm to find SCCs
     // SCC only run on graphs where n == v_max, so needs to create mapping from vertices to [n] first to work
     vector<vector<int>> SCC() {
-//        cout << "Running SCC" << endl;
         vector<int> vertsToN = vector<int>(v_max, 0);
         vector<int> NtoVerts = vector<int>(n, 0);
 
@@ -175,11 +174,8 @@ public:
         for (int v_true: adjacencyList[NtoVerts[u]]) {
             int v = vertsToN[v_true];
             if (disc[v] == -1) {
-                // SCCverts = SCCUtil(v, low, disc, stackMember, st, vertsToN);
-                // SCCUtil(v, low, disc, stackMember, st, vertsToN);
                 vector<vector<int>> SCCTmp = SCCUtil(v, low, disc, stackMember, st, vertsToN, NtoVerts);
-                for (const vector<int>& SCC: SCCTmp)
-                    SCCverts.push_back(SCC);
+                SCCverts.insert(SCCverts.end(), SCCTmp.begin(), SCCTmp.end());
                 low[u] = min(low[u], low[v]);
             } else if (stackMember[v])
                 low[u] = min(low[u], disc[v]);

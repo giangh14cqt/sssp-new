@@ -437,7 +437,6 @@ vector<vector<int>> SPmainLDD(Graph &g, int diameter) {
 
         largeEdgesRemoved.addEdges(v, outVertices, weights);
     }
-
     vector<vector<int>> LDD = preLDD(largeEdgesRemoved, diameter);
     E_sep.insert(E_sep.end(), LDD.begin(), LDD.end());
 
