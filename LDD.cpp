@@ -5,7 +5,7 @@
 
 vector<vector<int>> preLDD(Graph &g, int d) {
     double r = ((double) Random::Get().GenInt() / (RAND_MAX));
-    int CALCULATE_SCC_PROB = 0.0;
+    int CALCULATE_SCC_PROB = 1.0;
     if (r < CALCULATE_SCC_PROB)
         return LDD(g, d);
 

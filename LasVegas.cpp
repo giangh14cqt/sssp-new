@@ -6,7 +6,7 @@
 bool MAKE_CONNECTED = false;
 int SRC = 1;
 bool CHECKS = false;
-bool WITH_LDD = true;
+bool WITH_LDD = false;
 
 Graph readInputTemp(ifstream &inputFile) {
     int g_size;
@@ -23,7 +23,7 @@ Graph readInputTemp(ifstream &inputFile) {
     int u, v, w;
     while (inputFile >> u >> v >> w) {
         if (u > g_size || v > g_size) {
-             cout << "Error: vertex out of bounds" << endl;
+            cout << "Error: vertex out of bounds" << endl;
             exit(1);
         }
         if (!g.containsVertex[u])
@@ -382,7 +382,7 @@ vector<int> ScaleDown(Graph &g, int delta, int B) {
         if (WITH_LDD)
             E_sep = SPmainLDD(g_b_nneg, int(4 * d * B));
 
-        set<vector<int>> E_sep_hash;
+        set<vector<int>> E_sep_hash(E_sep.begin(), E_sep.end());
         Graph g_B_Esep = createModifiedGB(g, B, false, E_sep_hash, emptyPhi);
         vector<vector<int>> SCCs = g_B_Esep.SCC();
 
@@ -465,16 +465,18 @@ bool hasNegativeEdges(Graph &g, vector<int> &phi, int B) {
 Graph createModifiedGB(Graph &g, int B, bool nneg, set<vector<int>> &remEdges, vector<int> &phi) {
     Graph modG(g.v_max, false);
     modG.addVertices(g.vertices);
+    vector<int> edges, weights;
 
     for (int u: g.vertices) {
-        vector<int> edges(g.adjacencyList[u].size());
-        vector<int> weights(g.adjacencyList[u].size());
+        edges = vector<int>(g.adjacencyList[u].size());
+        weights = vector<int>(g.adjacencyList[u].size());
 
+        Timer::startDebugTimer();
         for (int i = 0; i < g.adjacencyList[u].size(); i++) {
             int v = g.adjacencyList[u][i];
 
             vector<int> edge = {u, v};
-            if ((remEdges.empty()) || (remEdges.find(edge) == remEdges.end())) {
+            if ((remEdges.empty()) || (remEdges.find(edge) != remEdges.end())) {
                 int weight = g.weights[u][i];
 
                 if (weight < 0) {
@@ -491,6 +493,7 @@ Graph createModifiedGB(Graph &g, int B, bool nneg, set<vector<int>> &remEdges, v
                 weights[i] = weight;
             }
         }
+        Timer::stopDebugTimer();
 
         modG.addEdges(u, edges, weights);
     }
@@ -504,7 +507,7 @@ set<vector<int>> getEdgesBetweenSCCs(Graph &g, vector<int> &vertexToSCCMap) {
         for (int v: g.adjacencyList[u]) {
             if (vertexToSCCMap[u] != vertexToSCCMap[v]) {
                 vector<int> edge = {u, v};
-                edgesBetweenSCCs.emplace(edge);
+                edgesBetweenSCCs.insert(edge);
             }
         }
     }
