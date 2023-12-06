@@ -23,10 +23,6 @@
 
 using namespace std;
 
-//double CALCULATE_SCC_PROB = 1.0; // need to be rechecked
-//int LDD_BASE_CASE = 10;
-
-// typedef pair<int, int> Node;
 class Node {
 public:
     int node;
@@ -47,29 +43,6 @@ public:
 
     bool operator==(const Node &n) const {
         return cost == n.cost;
-    }
-};
-
-class Edge {
-public:
-    int u, v;
-
-    Edge(int u_, int v_) {
-        u = u_;
-        v = v_;
-    }
-
-    bool operator==(const Edge &e) const {
-        return u == e.u && v == e.v;
-    }
-
-    const Edge & get_data() const {
-        return *this;
-    }
-
-    void set_data(const Edge &e) {
-        u = e.u;
-        v = e.v;
     }
 };
 
@@ -135,13 +108,6 @@ public:
             throw_with_nested("Number of out vertices and weights must be equal");
         adjacencyList[v] = vector<int> (outVertices.begin(), outVertices.end());
         weights[v] = vector<int> (outWeights.begin(), outWeights.end());
-//        for (int i = 0; i < outVertices.size(); i++) {
-//            adjacencyList[v][i] = outVertices[i];
-//            weights[v][i] = outWeights[i];
-//        }
-    }
-
-    void initNullAdjListElts() {
     }
 
     void displayGraph() {

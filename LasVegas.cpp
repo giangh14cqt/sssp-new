@@ -58,7 +58,6 @@ Graph readInput(ifstream &inputFile) {
     int u, v, w;
     while (inputFile >> u >> v >> w) {
         if (u > g_size || v > g_size) {
-            // cout << "Error: vertex out of bounds" << endl;
             exit(1);
         }
         if (!g.containsVertex[u])
@@ -69,7 +68,6 @@ Graph readInput(ifstream &inputFile) {
 
         if (!edge_exists[u][v]) {
             edges[u].push_back(v);
-//            weights[u].push_back(getWeight(w, u, v, phi));
             weights[u].push_back(w);
             edge_exists[u][v] = true;
         }
@@ -78,11 +76,9 @@ Graph readInput(ifstream &inputFile) {
     if (MAKE_CONNECTED) {
         for (int i: g.vertices) {
             edges[0].push_back(i);
-//            weights[0].push_back(getWeight(0, 0, i, phi));
             weights[0].push_back(0);
 
             edges[i].push_back(0);
-//            weights[i].push_back(getWeight(0, i, 0, phi));
             weights[i].push_back(0);
         }
         g.addVertex(0);
@@ -149,7 +145,7 @@ vector<int> bitScaling(Graph &g) {
             minWeight = min(minWeight, g.weights[u][i]);
 
     if (minWeight >= 0) {
-        // cout << "Graph is non-negative" << endl;
+         cout << "Graph is non-negative" << endl;
         return getShortestPathTree(g, SRC);
     }
 
@@ -278,7 +274,6 @@ vector<int> SPMain(Graph &g_in, int s) {
     int B = roundPower2(scaleFactor);
     vector<int> phi(g.v_max);
     set<vector<int>> nullErem;
-    Timer::resetDebugTimer();
     for (int i = 1; i <= logBase2(B); i++) {
         nullErem.clear();
         Graph g_phi = createModifiedGB(g, 0, false, nullErem, phi);
@@ -290,7 +285,6 @@ vector<int> SPMain(Graph &g_in, int s) {
 
         phi = addPhi(phi, phi_i);
     }
-    cout << "SPMainLDD lasts for: " << Timer::getDebugDuration() << endl;
 
     // create G^*
     for (int u: g.vertices) {
@@ -471,7 +465,6 @@ Graph createModifiedGB(Graph &g, int B, bool nneg, set<vector<int>> &remEdges, v
         edges = vector<int>(g.adjacencyList[u].size());
         weights = vector<int>(g.adjacencyList[u].size());
 
-        Timer::startDebugTimer();
         for (int i = 0; i < g.adjacencyList[u].size(); i++) {
             int v = g.adjacencyList[u][i];
 
@@ -493,7 +486,6 @@ Graph createModifiedGB(Graph &g, int B, bool nneg, set<vector<int>> &remEdges, v
                 weights[i] = weight;
             }
         }
-        Timer::stopDebugTimer();
 
         modG.addEdges(u, edges, weights);
     }

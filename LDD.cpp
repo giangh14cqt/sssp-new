@@ -94,7 +94,6 @@ Each int[] in the output ArrayList has size two and represents an edge
 (int[0], int[1])
 */
 vector<vector<int>> LDD(Graph &g, int d) {
-    // cout << "LDD size: " << g.n << endl;
     int LDD_BASE_CASE = 10;
     if (g.n <= max(1, LDD_BASE_CASE))
         return {};
@@ -135,7 +134,6 @@ vector<vector<int>> LDD(Graph &g, int d) {
         Graph subGraph = getSubGraph(g, ball, false);
         Graph minusSubGraph = getSubGraph(g, ball, true);
 
-        // return edgeUnion(layer(g, ball), preLDD(subGraph, d), preLDD(minusSubGraph, d));
         vector<vector<int>> layer_g = layer(g, ball);
         vector<vector<int>> preLDD_subGraph = preLDD(subGraph, d);
         vector<vector<int>> preLDD_minusSubGraph = preLDD(minusSubGraph, d);
@@ -147,7 +145,6 @@ vector<vector<int>> LDD(Graph &g, int d) {
         Graph subGraph = getSubGraph(g_rev, ball, false);
         Graph minusSubGraph = getSubGraph(g_rev, ball, true);
 
-//        return revEdges(edgeUnion(layer(g_rev, ball), preLDD(subGraph, d), preLDD(minusSubGraph, d)));
         vector<vector<int>> layer_g_rev = layer(g_rev, ball);
         vector<vector<int>> preLDD_subGraph = preLDD(subGraph, d);
         vector<vector<int>> preLDD_minusSubGraph = preLDD(minusSubGraph, d);
@@ -162,9 +159,6 @@ vector<vector<int>> LDD(Graph &g, int d) {
 
 vector<vector<int>> revEdges(vector<vector<int>> &edges) {
     vector<vector<int>> revEdgeSet(edges.size());
-//    for (vector<int> edge: edges) {
-//        revEdgeSet.push_back(vector<int>{edge[1], edge[0]});
-//    }
     for (int i = 0; i < edges.size(); i++) {
         revEdgeSet[i] = vector<int>{edges[i][1], edges[i][0]};
     }
@@ -227,7 +221,6 @@ vector<vector<int>> RandomTrim(Graph &g, Graph &g_rev, int s, int d) {
             Graph gVminusM = getSubGraph(g, m, true);
             vector<int> ball = volume(gVminusM, v, i_rnd);
             Graph GVMinusMSubGraph = getSubGraph(gVminusM, ball, false);
-//            e_sep = edgeUnion(e_sep, layer(gVminusM, ball), preLDD(GVMinusMSubGraph, d));
             vector<vector<int>> layer_gVminusM = layer(gVminusM, ball);
             vector<vector<int>> preLDD_GVMinusMSubGraph = preLDD(GVMinusMSubGraph, d);
             e_sep = edgeUnion(e_sep, layer_gVminusM, preLDD_GVMinusMSubGraph);
@@ -236,8 +229,6 @@ vector<vector<int>> RandomTrim(Graph &g, Graph &g_rev, int s, int d) {
             Graph gVminusM_rev = getSubGraph(g_rev, m, true);
             vector<int> ball_rev = volume(gVminusM_rev, v, i_rnd);
             Graph GVMinusMSubGraph_rev = getSubGraph(gVminusM_rev, ball_rev, false);
-//            e_sep = edgeUnion(e_sep, revEdges(layer(gVminusM_rev, ball_rev)),
-//                              revEdges(preLDD(GVMinusMSubGraph_rev, d)));
             vector<vector<int>> layer_gVminusM_rev = layer(gVminusM_rev, ball_rev);
             vector<vector<int>> preLDD_GVMinusMSubGraph_rev = preLDD(GVMinusMSubGraph_rev, d);
             layer_gVminusM_rev = revEdges(layer_gVminusM_rev);
@@ -285,7 +276,6 @@ Graph getSubGraph(Graph &g, vector<int> &ball, bool setMinus) {
 
         subGraph.addEdges(u, edges, weights);
     }
-    // subGraph.initNullAdjListElts();
     return subGraph;
 }
 
@@ -315,22 +305,6 @@ vector<vector<int>> edgeUnion(vector<vector<int>> &set1,
     set.insert(set2.begin(), set2.end());
     set.insert(set3.begin(), set3.end());
     return {set.begin(), set.end()};
-//    addEdgesToSet(set, set1);
-//    addEdgesToSet(set, set2);
-//    addEdgesToSet(set, set3);
-//
-//    vector<vector<int>> output;
-//    output.reserve(set.size());
-//    for (const vector<int> &i: set)
-//        output.push_back(i);
-//
-//    return output;
-}
-
-void addEdgesToSet(set<vector<int>> &set, vector<vector<int>> &edges) {
-//    for (const vector<int>& i: edges)
-//        set.insert(i);
-    set.insert(edges.begin(), edges.end());
 }
 
 int diffVertex(vector<int> &set1, vector<int> &set2, int v_max) {
