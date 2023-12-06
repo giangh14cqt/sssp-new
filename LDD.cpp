@@ -3,9 +3,8 @@
 //
 #include "LDD.h"
 
-vector<vector<int>> preLDD(Graph &g, int d) {
+vector<vector<int>> preLDD(Graph &g, int d, double CALCULATE_SCC_PROB) {
     double r = ((double) Random::Get().GenInt() / (RAND_MAX));
-    int CALCULATE_SCC_PROB = 1.0;
     if (r < CALCULATE_SCC_PROB)
         return LDD(g, d);
 
@@ -135,8 +134,8 @@ vector<vector<int>> LDD(Graph &g, int d) {
         Graph minusSubGraph = getSubGraph(g, ball, true);
 
         vector<vector<int>> layer_g = layer(g, ball);
-        vector<vector<int>> preLDD_subGraph = preLDD(subGraph, d);
-        vector<vector<int>> preLDD_minusSubGraph = preLDD(minusSubGraph, d);
+        vector<vector<int>> preLDD_subGraph = preLDD(subGraph, d, subGraph.n/1000.0);
+        vector<vector<int>> preLDD_minusSubGraph = preLDD(minusSubGraph, d, minusSubGraph.n/1000.0);
         return edgeUnion(layer_g, preLDD_subGraph, preLDD_minusSubGraph);
     }
 
@@ -146,8 +145,8 @@ vector<vector<int>> LDD(Graph &g, int d) {
         Graph minusSubGraph = getSubGraph(g_rev, ball, true);
 
         vector<vector<int>> layer_g_rev = layer(g_rev, ball);
-        vector<vector<int>> preLDD_subGraph = preLDD(subGraph, d);
-        vector<vector<int>> preLDD_minusSubGraph = preLDD(minusSubGraph, d);
+        vector<vector<int>> preLDD_subGraph = preLDD(subGraph, d, subGraph.n/1000.0);
+        vector<vector<int>> preLDD_minusSubGraph = preLDD(minusSubGraph, d, minusSubGraph.n/1000.0);
         layer_g_rev = revEdges(layer_g_rev);
         preLDD_subGraph = revEdges(preLDD_subGraph);
         preLDD_minusSubGraph = revEdges(preLDD_minusSubGraph);
@@ -222,7 +221,7 @@ vector<vector<int>> RandomTrim(Graph &g, Graph &g_rev, int s, int d) {
             vector<int> ball = volume(gVminusM, v, i_rnd);
             Graph GVMinusMSubGraph = getSubGraph(gVminusM, ball, false);
             vector<vector<int>> layer_gVminusM = layer(gVminusM, ball);
-            vector<vector<int>> preLDD_GVMinusMSubGraph = preLDD(GVMinusMSubGraph, d);
+            vector<vector<int>> preLDD_GVMinusMSubGraph = preLDD(GVMinusMSubGraph, d, GVMinusMSubGraph.n/1000.0);
             e_sep = edgeUnion(e_sep, layer_gVminusM, preLDD_GVMinusMSubGraph);
             m = vertexUnion(m, ball);
         } else if (dist[v] > 2 * d) {
@@ -230,7 +229,7 @@ vector<vector<int>> RandomTrim(Graph &g, Graph &g_rev, int s, int d) {
             vector<int> ball_rev = volume(gVminusM_rev, v, i_rnd);
             Graph GVMinusMSubGraph_rev = getSubGraph(gVminusM_rev, ball_rev, false);
             vector<vector<int>> layer_gVminusM_rev = layer(gVminusM_rev, ball_rev);
-            vector<vector<int>> preLDD_GVMinusMSubGraph_rev = preLDD(GVMinusMSubGraph_rev, d);
+            vector<vector<int>> preLDD_GVMinusMSubGraph_rev = preLDD(GVMinusMSubGraph_rev, d, GVMinusMSubGraph_rev.n/1000.0);
             layer_gVminusM_rev = revEdges(layer_gVminusM_rev);
             preLDD_GVMinusMSubGraph_rev = revEdges(preLDD_GVMinusMSubGraph_rev);
             e_sep = edgeUnion(e_sep, layer_gVminusM_rev, preLDD_GVMinusMSubGraph_rev);
@@ -330,7 +329,6 @@ vector<int> CoreOrLayerRange(Graph &g, Graph &g_rev, int s, int d) {
     vector<vector<int>> farthestDistancesSeen;
     vector<vector<int>> farthestDistancesSeen_rev;
     double constant = d / (3.0 * log(g.n));
-    // cout << "Constant: " << constant << endl;
     vector<bool> settled(g.v_max, false);
     vector<bool> settled_rev(g.v_max, false);
     int numSettled = 0;
@@ -417,7 +415,6 @@ Graph createGRev(Graph &g) {
     for (int i = 0; i < g.v_max; i++) {
         g_rev.addEdges(i, edges[i], weights[i]);
     }
-    // g_rev.initNullAdjListElts();
     return g_rev;
 }
 
@@ -440,7 +437,6 @@ vector<int> oneIterationLayerRange(Graph &g,
          */
         int farthestDistanceSeen = farthestDistancesSeen[farthestDistancesSeen.size() - 1][0];
         int i_big = min(d, farthestDistanceSeen + (int) ceil(constant));
-        // cout << "farthestDistanceSeen: " << farthestDistanceSeen << " constant: " << constant << " i_big: " << i_big << endl;
         return vector<int>{2, i_big};
     }
     int u = pq.top().node;
@@ -560,8 +556,6 @@ vector<int> Dijkstra(Graph &g, int s) {
     }
     return dist;
 }
-
-// void init(Graph g, priority_queue<Node> pq, vector<int> dist, int s);
 
 // checked
 void updateNeighbors(Graph &g, int u, vector<bool> &settled, priority_queue<Node> &pq, vector<int> &dist, int d) {

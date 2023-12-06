@@ -13,7 +13,6 @@ Graph readInputTemp(ifstream &inputFile) {
     int maxWeight;
     inputFile >> g_size >> maxWeight;
     ++g_size;
-    // vector<int> phi = createRandomPriceFunction(g_size, maxWeight);
 
     Graph g(g_size, false);
     vector<vector<int>> edges(g_size);
@@ -48,7 +47,6 @@ Graph readInput(ifstream &inputFile) {
     int maxWeight;
     inputFile >> g_size; // >> maxWeight;
     ++g_size;
-//    vector<int> phi = createRandomPriceFunction(g_size, maxWeight);
 
     Graph g(g_size, false);
     vector<vector<int>> edges(g_size);
@@ -135,9 +133,7 @@ void findReachable(Graph &g, int s, vector<bool> &reachable) {
 
 vector<int> bitScaling(Graph &g) {
     int LDD_BASE_CASE = 10;
-    int CALCULATE_SCC_PROB = 1;
     LDD_BASE_CASE = g.n / (LDD_BASE_CASE * log(g.n));
-    CALCULATE_SCC_PROB = g.n / 10000.0;
 
     int minWeight = INT_MAX;
     for (int u: g.vertices)
@@ -431,7 +427,8 @@ vector<vector<int>> SPmainLDD(Graph &g, int diameter) {
 
         largeEdgesRemoved.addEdges(v, outVertices, weights);
     }
-    vector<vector<int>> LDD = preLDD(largeEdgesRemoved, diameter);
+    double CALCULATE_SCC_PROB = g.n / 10000.0;
+    vector<vector<int>> LDD = preLDD(largeEdgesRemoved, diameter, CALCULATE_SCC_PROB);
     E_sep.insert(E_sep.end(), LDD.begin(), LDD.end());
 
     return E_sep;
@@ -650,7 +647,6 @@ vector<int> ElimNeg(Graph &g) {
     inPQ[s] = true;
 
     set<int> marked;
-//    map<int, bool> tobeRemoved;
 
     while (!pq.empty()) {
         // Dijkstra Phase
