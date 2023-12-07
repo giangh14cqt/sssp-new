@@ -7,7 +7,7 @@
 
 #include "Randd.h"
 
-vector<vector<int>> preLDD(Graph &g, int d, double CALCULATE_SCC_PROB);
+vector<vector<int>> preLDD(Graph &g, int d);
 
 bool hasLargeDiameter(Graph &g, int s, int diameter);
 

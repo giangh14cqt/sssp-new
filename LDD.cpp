@@ -3,10 +3,10 @@
 //
 #include "LDD.h"
 
-vector<vector<int>> preLDD(Graph &g, int d, double CALCULATE_SCC_PROB) {
+vector<vector<int>> preLDD(Graph &g, int d) {
     double r = ((double) Random::Get().GenInt() / (RAND_MAX));
-    if (r < CALCULATE_SCC_PROB)
-        return LDD(g, d);
+//    if (r < CALCULATE_SCC_PROB) // todo
+    return LDD(g, d);
 
     vector<vector<int>> SCCs = g.SCC();
     vector<vector<int>> E_sep;
@@ -70,7 +70,7 @@ bool hasLargeDiameter(Graph &g, int s, int diameter) {
         settled[u] = true;
         numSettled++;
 
-        for (int i = 0; i < g.adjacencyList[u].size(); i++) {
+        for (unsigned long i = 0; i < g.adjacencyList[u].size(); i++) {
             int v = g.adjacencyList[u][i];
             if (!settled[v] && dist[u] + g.weights[u][i] < dist[v]) {
                 dist[v] = dist[u] + g.weights[u][i];
@@ -93,6 +93,7 @@ Each int[] in the output ArrayList has size two and represents an edge
 (int[0], int[1])
 */
 vector<vector<int>> LDD(Graph &g, int d) {
+//    cout << "LDD size: " << g.n << endl;
     int LDD_BASE_CASE = 10;
     if (g.n <= max(1, LDD_BASE_CASE))
         return {};
@@ -100,17 +101,15 @@ vector<vector<int>> LDD(Graph &g, int d) {
     Graph g_rev = createGRev(g);
 
     // pick a good, well-connected source vertex
-    int s = g.vertices[0];
-    bool foundGoodS = false;
+    int s = -1;
     for (int v: g.vertices) {
         if (g.adjacencyList[v].size() >= 1 || !g_rev.adjacencyList[v].empty()) {
             s = v;
-            foundGoodS = true;
             break;
         }
     }
 
-    if (!foundGoodS)
+    if (s == -1)
         return {};
 
     vector<int> condAndi_max = CoreOrLayerRange(g, g_rev, s, d);
@@ -134,8 +133,8 @@ vector<vector<int>> LDD(Graph &g, int d) {
         Graph minusSubGraph = getSubGraph(g, ball, true);
 
         vector<vector<int>> layer_g = layer(g, ball);
-        vector<vector<int>> preLDD_subGraph = preLDD(subGraph, d, subGraph.n/1000.0);
-        vector<vector<int>> preLDD_minusSubGraph = preLDD(minusSubGraph, d, minusSubGraph.n/1000.0);
+        vector<vector<int>> preLDD_subGraph = preLDD(subGraph, d);
+        vector<vector<int>> preLDD_minusSubGraph = preLDD(minusSubGraph, d);
         return edgeUnion(layer_g, preLDD_subGraph, preLDD_minusSubGraph);
     }
 
@@ -145,8 +144,8 @@ vector<vector<int>> LDD(Graph &g, int d) {
         Graph minusSubGraph = getSubGraph(g_rev, ball, true);
 
         vector<vector<int>> layer_g_rev = layer(g_rev, ball);
-        vector<vector<int>> preLDD_subGraph = preLDD(subGraph, d, subGraph.n/1000.0);
-        vector<vector<int>> preLDD_minusSubGraph = preLDD(minusSubGraph, d, minusSubGraph.n/1000.0);
+        vector<vector<int>> preLDD_subGraph = preLDD(subGraph, d);
+        vector<vector<int>> preLDD_minusSubGraph = preLDD(minusSubGraph, d);
         layer_g_rev = revEdges(layer_g_rev);
         preLDD_subGraph = revEdges(preLDD_subGraph);
         preLDD_minusSubGraph = revEdges(preLDD_minusSubGraph);
@@ -158,7 +157,7 @@ vector<vector<int>> LDD(Graph &g, int d) {
 
 vector<vector<int>> revEdges(vector<vector<int>> &edges) {
     vector<vector<int>> revEdgeSet(edges.size());
-    for (int i = 0; i < edges.size(); i++) {
+    for (unsigned long i = 0; i < edges.size(); i++) {
         revEdgeSet[i] = vector<int>{edges[i][1], edges[i][0]};
     }
     return revEdgeSet;
@@ -183,7 +182,7 @@ vector<vector<int>> RandomTrim(Graph &g, Graph &g_rev, int s, int d) {
     int over4DVert = -1;
 
     vector<int> v_far;
-    for (int v: g.vertices)
+    for (int &v: g.vertices)
         if (max(dist[v], dist_rev[v]) > 2 * d) {
             v_far.push_back(v);
             if (max(dist[v], dist_rev[v]) > 4 * d) {
@@ -195,7 +194,7 @@ vector<vector<int>> RandomTrim(Graph &g, Graph &g_rev, int s, int d) {
     // base case
     if (numDistOver4D <= 1) {
         if (numDistOver4D == 1) {
-            for (int v: g.adjacencyList[over4DVert]) {
+            for (int &v: g.adjacencyList[over4DVert]) {
                 e_sep.push_back(vector<int>{over4DVert, v});
             }
         }
@@ -221,7 +220,7 @@ vector<vector<int>> RandomTrim(Graph &g, Graph &g_rev, int s, int d) {
             vector<int> ball = volume(gVminusM, v, i_rnd);
             Graph GVMinusMSubGraph = getSubGraph(gVminusM, ball, false);
             vector<vector<int>> layer_gVminusM = layer(gVminusM, ball);
-            vector<vector<int>> preLDD_GVMinusMSubGraph = preLDD(GVMinusMSubGraph, d, GVMinusMSubGraph.n/1000.0);
+            vector<vector<int>> preLDD_GVMinusMSubGraph = preLDD(GVMinusMSubGraph, d);
             e_sep = edgeUnion(e_sep, layer_gVminusM, preLDD_GVMinusMSubGraph);
             m = vertexUnion(m, ball);
         } else if (dist[v] > 2 * d) {
@@ -229,7 +228,7 @@ vector<vector<int>> RandomTrim(Graph &g, Graph &g_rev, int s, int d) {
             vector<int> ball_rev = volume(gVminusM_rev, v, i_rnd);
             Graph GVMinusMSubGraph_rev = getSubGraph(gVminusM_rev, ball_rev, false);
             vector<vector<int>> layer_gVminusM_rev = layer(gVminusM_rev, ball_rev);
-            vector<vector<int>> preLDD_GVMinusMSubGraph_rev = preLDD(GVMinusMSubGraph_rev, d, GVMinusMSubGraph_rev.n/1000.0);
+            vector<vector<int>> preLDD_GVMinusMSubGraph_rev = preLDD(GVMinusMSubGraph_rev, d);
             layer_gVminusM_rev = revEdges(layer_gVminusM_rev);
             preLDD_GVMinusMSubGraph_rev = revEdges(preLDD_GVMinusMSubGraph_rev);
             e_sep = edgeUnion(e_sep, layer_gVminusM_rev, preLDD_GVMinusMSubGraph_rev);
@@ -247,11 +246,11 @@ vector<vector<int>> RandomTrim(Graph &g, Graph &g_rev, int s, int d) {
 // the vertices outside of the ball
 Graph getSubGraph(Graph &g, vector<int> &ball, bool setMinus) {
     vector<bool> contains(g.v_max, false);
-    for (int i: ball)
+    for (int &i: ball)
         contains[i] = true;
 
     vector<int> vert;
-    for (int v: g.vertices)
+    for (int &v: g.vertices)
         if (!setMinus && contains[v])
             vert.push_back(v);
         else if (setMinus && !contains[v])
@@ -260,11 +259,11 @@ Graph getSubGraph(Graph &g, vector<int> &ball, bool setMinus) {
     Graph subGraph(g.v_max, false);
     subGraph.addVertices(vert);
 
-    for (int u: vert) {
+    for (int &u: vert) {
         vector<int> edges;
         vector<int> weights;
 
-        for (int i = 0; i < g.adjacencyList[u].size(); i++) {
+        for (unsigned long i = 0; i < g.adjacencyList[u].size(); i++) {
             int v = g.adjacencyList[u][i];
 
             if (subGraph.containsVertex[v]) {
@@ -284,17 +283,19 @@ vector<int> vertexUnion(vector<int> &set1, vector<int> &set2) {
     addVerticesToSet(set, set1);
     addVerticesToSet(set, set2);
 
-    vector<int> output;
-    output.reserve(set.size());
-    for (int i: set)
-        output.push_back(i);
-
-    return output;
+//    vector<int> output;
+//    output.reserve(set.size());
+//    for (int i: set)
+//        output.push_back(i);
+//
+//    return output;
+    return vector<int>{set.begin(), set.end()};
 }
 
 void addVerticesToSet(set<int> &set, vector<int> &vertices) {
-    for (int i: vertices)
-        set.insert(i);
+//    for (int i: vertices)
+//        set.insert(i);
+    set.insert(vertices.begin(), vertices.end());
 }
 
 vector<vector<int>> edgeUnion(vector<vector<int>> &set1,
@@ -308,10 +309,10 @@ vector<vector<int>> edgeUnion(vector<vector<int>> &set1,
 
 int diffVertex(vector<int> &set1, vector<int> &set2, int v_max) {
     vector<bool> contains(v_max, false);
-    for (int i : set2)
+    for (int &i: set2)
         contains[i] = true;
 
-    for (int i : set1)
+    for (int &i: set1)
         if (!contains[i])
             return i;
 
@@ -364,34 +365,30 @@ vector<int> CoreOrLayerRange(Graph &g, Graph &g_rev, int s, int d) {
         if (!finished) {
             vector<int> result = oneIterationLayerRange(g, pq, settled, numSettled, farthestDistancesSeen, constant,
                                                         dist, d);
-            for (vector<int> i: farthestDistancesSeen)
-                for (int i: result)
-                    if (!result.empty()) {
-                        if (result[0] == 1) {
-                            j = result[1];
-                            finished = true;
-                        } else if (result[0] == 2) {
-                            // case 2
-                            return vector<int>{2, result[1]};
-                        }
-                    }
+            if (!result.empty()) {
+                if (result[0] == 1) {
+                    j = result[1];
+                    finished = true;
+                } else if (result[0] == 2) {
+                    // case 2
+                    return vector<int>{2, result[1]};
+                }
+            }
             numSettled++;
         }
 
         if (!finished_rev) {
             vector<int> result_rev = oneIterationLayerRange(g_rev, pq_rev, settled_rev, numSettled_rev,
                                                             farthestDistancesSeen_rev, constant, dist_rev, d);
-            for (vector<int> i: farthestDistancesSeen_rev)
-                for (int i: result_rev)
-                    if (!result_rev.empty()) {
-                        if (result_rev[0] == 1) {
-                            j_rev = result_rev[1];
-                            finished_rev = true;
-                        } else if (result_rev[0] == 2) {
-                            // case 3
-                            return vector<int>{3, result_rev[1]};
-                        }
-                    }
+            if (!result_rev.empty()) {
+                if (result_rev[0] == 1) {
+                    j_rev = result_rev[1];
+                    finished_rev = true;
+                } else if (result_rev[0] == 2) {
+                    // case 3
+                    return vector<int>{3, result_rev[1]};
+                }
+            }
             numSettled_rev++;
         }
     }
@@ -405,8 +402,8 @@ Graph createGRev(Graph &g) {
     vector<vector<int>> edges(g.v_max);
     vector<vector<int>> weights(g.v_max);
 
-    for (int v: g.vertices) {
-        for (int i = 0; i < g.adjacencyList[v].size(); i++) {
+    for (int &v: g.vertices) {
+        for (unsigned long i = 0; i < g.adjacencyList[v].size(); i++) {
             edges[g.adjacencyList[v][i]].push_back(v);
             weights[g.adjacencyList[v][i]].push_back(g.weights[v][i]);
         }
@@ -488,11 +485,11 @@ bool sameCanonicalRange(vector<vector<int>> &farthestDistancesSeen, double const
 // returns the edges (u, v) where u is in ball and v is not in ball
 vector<vector<int>> layer(Graph &g, vector<int> &ball) {
     vector<bool> contains(g.v_max, false);
-    for (int i: ball)
+    for (int &i: ball)
         contains[i] = true;
     vector<vector<int>> edges;
-    for (int u: ball) {
-        for (int v: g.adjacencyList[u]) {
+    for (int &u: ball) {
+        for (int &v: g.adjacencyList[u]) {
             if (!contains[v])
                 edges.push_back(vector<int>{u, v});
         }
@@ -559,7 +556,7 @@ vector<int> Dijkstra(Graph &g, int s) {
 
 // checked
 void updateNeighbors(Graph &g, int u, vector<bool> &settled, priority_queue<Node> &pq, vector<int> &dist, int d) {
-    for (int i = 0; i < g.adjacencyList[u].size(); i++) {
+    for (unsigned long i = 0; i < g.adjacencyList[u].size(); i++) {
         int v = g.adjacencyList[u][i];
         if (!settled[v]) {
             int newDistance = dist[u] + g.weights[u][i];

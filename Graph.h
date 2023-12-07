@@ -115,7 +115,7 @@ public:
         for (int i = 0; i < v_max; i++) {
             if (containsVertex[i]) {
                 cout << "Vertex " << i << " has out edges: ";
-                for (int j = 0; j < adjacencyList[i].size(); j++) {
+                for (unsigned long j = 0; j < adjacencyList[i].size(); j++) {
                     cout << adjacencyList[i][j] << " with weight " << weights[i][j] << ", ";
                 }
                 cout << endl;
@@ -129,7 +129,7 @@ public:
         vector<int> vertsToN = vector<int>(v_max, 0);
         vector<int> NtoVerts = vector<int>(n, 0);
 
-        for (int i = 0; i < vertices.size(); ++i) {
+        for (unsigned long i = 0; i < vertices.size(); ++i) {
             vertsToN[vertices[i]] = i;
             NtoVerts[i] = vertices[i];
         }
@@ -191,7 +191,7 @@ public:
         vector<int> vertsToN = vector<int>(v_max, -1);
         vector<int> NtoVerts = vector<int>(n, -1);
 
-        for (int i = 0; i < vertices.size(); ++i) {
+        for (unsigned long i = 0; i < vertices.size(); ++i) {
             vertsToN[vertices[i]] = i;
             NtoVerts[i] = vertices[i];
         }
@@ -221,7 +221,7 @@ public:
         for (int i = 1; i <= n - 1; ++i) {
             for (int u = 0; u < n; ++u) {
                 int u_real = NtoVerts[u];
-                for (int j = 0; j < adjacencyList[u_real].size(); ++j) {
+                for (unsigned long j = 0; j < adjacencyList[u_real].size(); ++j) {
                     int v_real = adjacencyList[u_real][j];
                     int v = vertsToN[v_real];
                     int weight = weights[u_real][j];
@@ -233,7 +233,7 @@ public:
 
         for (int u = 0; u < n; ++u) {
             int u_real = NtoVerts[u];
-            for (int j = 0; j < adjacencyList[u_real].size(); ++j) {
+            for (unsigned long j = 0; j < adjacencyList[u_real].size(); ++j) {
                 int v_real = adjacencyList[u_real][j];
                 int v = vertsToN[v_real];
                 int weight = weights[u_real][j];
@@ -249,7 +249,7 @@ public:
         vector<int> vertsToN = vector<int>(v_max, -1);
         vector<int> NtoVerts = vector<int>(n, -1);
 
-        for (int i = 0; i < vertices.size(); ++i) {
+        for (unsigned long i = 0; i < vertices.size(); ++i) {
             vertsToN[vertices[i]] = i;
             NtoVerts[i] = vertices[i];
         }
@@ -262,7 +262,7 @@ public:
         for (int i = 1; i < n; ++i) {
             for (int u = 0; u < n; ++u) {
                 int u_real = NtoVerts[u];
-                for (int j = 0; j < adjacencyList[u_real].size(); ++j) {
+                for (unsigned long j = 0; j < adjacencyList[u_real].size(); ++j) {
                     int v_real = adjacencyList[u_real][j];
                     int v = vertsToN[v_real];
                     int weight = weights[u_real][j];
@@ -275,7 +275,7 @@ public:
 
     bool hasNoNegativeEdgeWeights() {
         for (int v: vertices) {
-            for (int i = 0; i < adjacencyList[v].size(); ++i) {
+            for (unsigned long i = 0; i < adjacencyList[v].size(); ++i) {
                 if (weights[v][i] < 0)
                     return false;
             }
