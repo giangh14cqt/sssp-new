@@ -6,7 +6,7 @@
 bool MAKE_CONNECTED = false;
 int SRC = 1;
 bool CHECKS = false;
-bool WITH_LDD = false;
+bool WITH_LDD = true;
 
 Graph readInputTemp(ifstream &inputFile) {
     int g_size;
@@ -264,7 +264,6 @@ void getDistances(Graph &g, vector<int> &tree, vector<int> &dist, int curDis, in
 }
 
 vector<int> SPMain(Graph &g_in, int s) {
-    cout << "SPMain start at: " << Timer::getDuration() << endl;
     int scaleFactor = 2 * g_in.n;
     Graph g = getScaledGraph(g_in, scaleFactor);
     int B = roundPower2(scaleFactor);
@@ -299,7 +298,6 @@ vector<int> SPMain(Graph &g_in, int s) {
     if (CHECKS && invalidTree(g, s, tree)) {
         throw_with_nested("SPMain get shortest path tree failed.");
     }
-    cout << "SPMain end at: " << Timer::getDuration() << endl;
 
     return tree;
 }
