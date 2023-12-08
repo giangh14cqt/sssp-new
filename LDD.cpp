@@ -3,10 +3,8 @@
 //
 #include "LDD.h"
 
-vector<vector<int>> preLDD(Graph &g, int d, double CALCULATE_SCC_PROB) {
-    double r = ((double) Random::Get().GenInt() / (RAND_MAX));
-    if (r < CALCULATE_SCC_PROB)
-        return LDD(g, d);
+vector<vector<int>> preLDD(Graph &g, int d) {
+//    return LDD(g, d);
 
     vector<vector<int>> SCCs = g.SCC();
     vector<vector<int>> E_sep;
@@ -134,8 +132,8 @@ vector<vector<int>> LDD(Graph &g, int d) {
         Graph minusSubGraph = getSubGraph(g, ball, true);
 
         vector<vector<int>> layer_g = layer(g, ball);
-        vector<vector<int>> preLDD_subGraph = preLDD(subGraph, d, subGraph.n/1000.0);
-        vector<vector<int>> preLDD_minusSubGraph = preLDD(minusSubGraph, d, minusSubGraph.n/1000.0);
+        vector<vector<int>> preLDD_subGraph = preLDD(subGraph, d);
+        vector<vector<int>> preLDD_minusSubGraph = preLDD(minusSubGraph, d);
         return edgeUnion(layer_g, preLDD_subGraph, preLDD_minusSubGraph);
     }
 
@@ -145,15 +143,15 @@ vector<vector<int>> LDD(Graph &g, int d) {
         Graph minusSubGraph = getSubGraph(g_rev, ball, true);
 
         vector<vector<int>> layer_g_rev = layer(g_rev, ball);
-        vector<vector<int>> preLDD_subGraph = preLDD(subGraph, d, subGraph.n/1000.0);
-        vector<vector<int>> preLDD_minusSubGraph = preLDD(minusSubGraph, d, minusSubGraph.n/1000.0);
+        vector<vector<int>> preLDD_subGraph = preLDD(subGraph, d);
+        vector<vector<int>> preLDD_minusSubGraph = preLDD(minusSubGraph, d);
         layer_g_rev = revEdges(layer_g_rev);
         preLDD_subGraph = revEdges(preLDD_subGraph);
         preLDD_minusSubGraph = revEdges(preLDD_minusSubGraph);
         return edgeUnion(layer_g_rev, preLDD_subGraph, preLDD_minusSubGraph);
     }
 
-    throw "Error: condAndi_max[0] is not 1, 2, or 3";
+    throw_with_nested("Error: condAndi_max[0] is not 1, 2, or 3");
 }
 
 vector<vector<int>> revEdges(vector<vector<int>> &edges) {
@@ -221,7 +219,7 @@ vector<vector<int>> RandomTrim(Graph &g, Graph &g_rev, int s, int d) {
             vector<int> ball = volume(gVminusM, v, i_rnd);
             Graph GVMinusMSubGraph = getSubGraph(gVminusM, ball, false);
             vector<vector<int>> layer_gVminusM = layer(gVminusM, ball);
-            vector<vector<int>> preLDD_GVMinusMSubGraph = preLDD(GVMinusMSubGraph, d, GVMinusMSubGraph.n/1000.0);
+            vector<vector<int>> preLDD_GVMinusMSubGraph = preLDD(GVMinusMSubGraph, d);
             e_sep = edgeUnion(e_sep, layer_gVminusM, preLDD_GVMinusMSubGraph);
             m = vertexUnion(m, ball);
         } else if (dist[v] > 2 * d) {
@@ -229,13 +227,13 @@ vector<vector<int>> RandomTrim(Graph &g, Graph &g_rev, int s, int d) {
             vector<int> ball_rev = volume(gVminusM_rev, v, i_rnd);
             Graph GVMinusMSubGraph_rev = getSubGraph(gVminusM_rev, ball_rev, false);
             vector<vector<int>> layer_gVminusM_rev = layer(gVminusM_rev, ball_rev);
-            vector<vector<int>> preLDD_GVMinusMSubGraph_rev = preLDD(GVMinusMSubGraph_rev, d, GVMinusMSubGraph_rev.n/1000.0);
+            vector<vector<int>> preLDD_GVMinusMSubGraph_rev = preLDD(GVMinusMSubGraph_rev, d);
             layer_gVminusM_rev = revEdges(layer_gVminusM_rev);
             preLDD_GVMinusMSubGraph_rev = revEdges(preLDD_GVMinusMSubGraph_rev);
             e_sep = edgeUnion(e_sep, layer_gVminusM_rev, preLDD_GVMinusMSubGraph_rev);
             m = vertexUnion(m, ball_rev);
         } else
-            throw "Error: dist[v] and dist_rev[v] are both <= 2 * d";
+            throw_with_nested("Error: dist[v] and dist_rev[v] are both <= 2 * d");
 
         v = diffVertex(v_far, m, g.v_max);
     }

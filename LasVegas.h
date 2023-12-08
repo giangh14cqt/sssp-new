@@ -8,15 +8,7 @@
 #include "LDD.h"
 #include "CustomPriorityQueue.h"
 
-Graph readInputTemp(ifstream &inputFile);
-
 Graph readInput(ifstream &inputFile);
-
-vector<int> createRandomPriceFunction(int g_size, int maxWeight);
-
-int getWeight(int weight, int u, int v, vector<int> &phi);
-
-Graph getConnectedSubgraph(Graph &g);
 
 void findReachable(Graph &g, int s, vector<bool> &reachable);
 
@@ -69,7 +61,7 @@ Graph createGs(Graph &g);
 
 vector<int> getShortestPathTree(Graph &g, int s);
 
-void updateTreeNeighbors(Graph &g, int u, vector<int> &tree, set<int> &settled, priority_queue<Node> &pq,
+void updateTreeNeighbors(Graph &g, int u, vector<int> &tree, set<int> &settled, custom_priority_queue<Node> &pq,
                          vector<int> &dist);
 
 vector<int> bellmanFord(Graph &g);

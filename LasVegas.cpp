@@ -6,7 +6,7 @@
 bool MAKE_CONNECTED = false;
 int SRC = 1;
 bool CHECKS = false;
-bool WITH_LDD = true;
+bool WITH_LDD = false;
 
 Graph readInputTemp(ifstream &inputFile) {
     int g_size;
@@ -44,7 +44,6 @@ Graph readInputTemp(ifstream &inputFile) {
 
 Graph readInput(ifstream &inputFile) {
     int g_size;
-    int maxWeight;
     inputFile >> g_size; // >> maxWeight;
     ++g_size;
 
@@ -132,9 +131,6 @@ void findReachable(Graph &g, int s, vector<bool> &reachable) {
 }
 
 vector<int> bitScaling(Graph &g) {
-    int LDD_BASE_CASE = 10;
-    LDD_BASE_CASE = g.n / (LDD_BASE_CASE * log(g.n));
-
     int minWeight = INT_MAX;
     for (int u: g.vertices)
         for (int i = 0; i < g.adjacencyList[u].size(); ++i)
@@ -639,7 +635,7 @@ vector<int> ElimNeg(Graph &g) {
         dist[v] = INT_MAX;
     }
 
-    custom_priority_queue<Node> pq;
+    custom_priority_queue<Node> pq(Gs.v_max);
     vector<bool> inPQ(Gs.v_max);
     pq.emplace(s, dist[s]);
     inPQ[s] = true;
@@ -669,7 +665,7 @@ vector<int> ElimNeg(Graph &g) {
                     marked.emplace(x);
 
                     dist[x] = dist[v] + edgeWeight;
-                    pq.push(Node(x, dist[x]));
+                    pq.emplace(Node(x, dist[x]));
                     inPQ[x] = true;
                 }
             }
@@ -683,7 +679,7 @@ vector<int> ElimNeg(Graph &g) {
 
                 if (edgeWeight < 0 && (dist[v] + edgeWeight < dist[x])) {
                     dist[x] = dist[v] + edgeWeight;
-                    pq.push(Node(x, dist[x]));
+                    pq.emplace(Node(x, dist[x]));
                     inPQ[x] = true;
                 }
             }
@@ -725,7 +721,7 @@ Graph createGs(Graph &g) {
 
 vector<int> getShortestPathTree(Graph &g, int s) {
     set<int> settled;
-    priority_queue<Node> pq;
+    custom_priority_queue<Node> pq(g.v_max);
     vector<int> dist(g.v_max);
     vector<int> tree(g.v_max);
 
@@ -756,7 +752,7 @@ vector<int> getShortestPathTree(Graph &g, int s) {
 }
 
 void updateTreeNeighbors(Graph &g, int u, vector<int> &tree,
-                         set<int> &settled, priority_queue<Node> &pq,
+                         set<int> &settled, custom_priority_queue<Node> &pq,
                          vector<int> &dist) {
     for (int i = 0; i < g.adjacencyList[u].size(); i++) {
         int v = g.adjacencyList[u][i];
