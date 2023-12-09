@@ -7,6 +7,9 @@
 
 #include "LDD.h"
 
+extern int SRC;
+extern bool WITH_LDD;
+
 Graph readInput(ifstream &inputFile);
 
 void findReachable(Graph &g, int s, vector<bool> &reachable);
@@ -65,7 +68,5 @@ vector<int> bellmanFord(Graph &g);
 vector<int> getDistFromTree(Graph &g, vector<int> &tree);
 
 void updateDistFromTree(Graph &g, vector<int> &tree, vector<int> &dist, int u);
-
-vector<int> getShortestPathDistance(Graph &g, int s);
 
 #endif //SSSP_NEW_LASVEGAS_H

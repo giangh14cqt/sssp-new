@@ -1,8 +1,15 @@
 #include "LasVegas.h"
 
 int main() {
+    string filename;
+    cout << "Enter filename (eg: \"../graph/500_2.txt\"): ";
+    cin >> filename;
+    cout << "Enter source vertex: ";
+    cin >> SRC;
+    cout << "Enter 1 for LDD, 0 for no LDD: ";
+    cin >> WITH_LDD;
     Random::Get().Seed();
-    ifstream inputFile("../graph/2500_1.txt");
+    ifstream inputFile(filename);
     Graph g = readInput(inputFile);
     vector<int> BellManFord;
     try {
@@ -23,6 +30,7 @@ int main() {
     for (int i = 0; i < BellManFord.size(); i++) {
         if (BellManFord[i] != LasVegas[i]) {
             cout << "Bellman-Ford and Las Vegas are not equal" << endl;
+            cout << i << ' ' << BellManFord[i] << " " << LasVegas[i] << endl;
             return 0;
         }
     }

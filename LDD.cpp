@@ -5,6 +5,7 @@
 
 
 vector<vector<int>> preLDD(Graph &g, int d) {
+    // only run LDD if the graph is large enough
     if (g.n > 1000)
         return LDD(g, d);
     vector<vector<int>> SCCs = g.SCC();
@@ -538,10 +539,7 @@ vector<int> Dijkstra(Graph &g, int s) {
     pq.push(Node(s, 0));
     dist[s] = 0;
 
-    while (numSettled != g.n) {
-        if (pq.empty())
-            return dist;
-
+    while (!pq.empty()) {
         int u = pq.top().node;
         pq.pop();
 

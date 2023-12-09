@@ -3,10 +3,9 @@
 //
 #include "LasVegas.h"
 
-bool MAKE_CONNECTED = false;
-int SRC = 1;
 bool CHECKS = false;
-bool WITH_LDD = false;
+int SRC;
+bool WITH_LDD;
 
 Graph readInput(ifstream &inputFile) {
     int g_size;
@@ -36,17 +35,6 @@ Graph readInput(ifstream &inputFile) {
         }
     }
 
-    if (MAKE_CONNECTED) {
-        for (int i: g.vertices) {
-            edges[0].push_back(i);
-            weights[0].push_back(0);
-
-            edges[i].push_back(0);
-            weights[i].push_back(0);
-        }
-        g.addVertex(0);
-    }
-
     for (int i = 0; i < g_size; ++i)
         g.addEdges(i, edges[i], weights[i]);
     return g;
@@ -60,6 +48,7 @@ void findReachable(Graph &g, int s, vector<bool> &reachable) {
 }
 
 vector<int> bitScaling(Graph &g) {
+    cout << "Running Bit Scaling from source: " << SRC << " LDD = " << WITH_LDD << endl;
     Timer::startTimer();
     int minWeight = INT_MAX;
     for (int u: g.vertices)
@@ -68,7 +57,10 @@ vector<int> bitScaling(Graph &g) {
 
     if (minWeight >= 0) {
         cout << "Graph is non-negative" << endl;
-        return getShortestPathTree(g, SRC);
+
+        vector<int> dist = Dijkstra(g, SRC);
+        cout << "Bit scaling took " << Timer::getDuration() << " seconds" << endl;
+        return dist;
     }
 
     int precision = int(pow(2, int(logBase2(-1 * minWeight))));
@@ -121,7 +113,8 @@ vector<int> bitScaling(Graph &g) {
         }
     }
 
-    vector<int> dist = getShortestPathDistance(gFinal, SRC);
+    vector<int> tree = getShortestPathTree(gFinal, SRC);
+    vector<int> dist = getDistFromTree(g, tree);
     cout << "Bit scaling took " << Timer::getDuration() << " seconds" << endl;
     return dist;
 }
@@ -665,40 +658,8 @@ vector<int> getShortestPathTree(Graph &g, int s) {
     return tree;
 }
 
-vector<int> getShortestPathDistance(Graph &g, int s) {
-    vector<bool> settled(g.v_max);
-    custom_priority_queue<Node> pq(g.v_max);
-    vector<int> dist(g.v_max, INT_MAX);
-
-    pq.emplace(s, 0);
-    dist[s] = 0;
-
-    while (!pq.empty()) {
-        int u = pq.top().node;
-        pq.pop();
-
-        if (settled[u]) {
-            continue;
-        }
-
-        settled[u] = true;
-        for (int i = 0; i < g.adjacencyList[u].size(); i++) {
-            int v = g.adjacencyList[u][i];
-            if (!settled[v]) {
-                int weight = g.weights[u][i];
-                int newDistance = dist[u] + weight;
-                if (newDistance < dist[v]) {
-                    dist[v] = newDistance;
-                    pq.emplace(v, dist[v]);
-                }
-            }
-        }
-    }
-
-    return dist;
-}
-
 vector<int> bellmanFord(Graph &g) {
+    cout << "Running Bellman-Ford from source: " << SRC << " LDD = " << WITH_LDD << endl;
     Timer::startTimer();
     vector<int> dist(g.v_max);
     for (int i = 0; i < g.v_max; i++) {
@@ -733,10 +694,7 @@ vector<int> bellmanFord(Graph &g) {
 }
 
 vector<int> getDistFromTree(Graph &g, vector<int> &tree) {
-    vector<int> dist(g.v_max);
-    for (int i = 0; i < g.v_max; i++) {
-        dist[i] = INT_MAX;
-    }
+    vector<int> dist(g.v_max, INT_MAX);
     dist[SRC] = 0;
 
     updateDistFromTree(g, tree, dist, SRC);
