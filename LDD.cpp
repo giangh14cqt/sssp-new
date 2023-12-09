@@ -3,9 +3,10 @@
 //
 #include "LDD.h"
 
-vector<vector<int>> preLDD(Graph &g, int d) {
-//    return LDD(g, d);
 
+vector<vector<int>> preLDD(Graph &g, int d) {
+    if (g.n > 1000)
+        return LDD(g, d);
     vector<vector<int>> SCCs = g.SCC();
     vector<vector<int>> E_sep;
 
@@ -47,7 +48,7 @@ vector<vector<int>> preLDD(Graph &g, int d) {
 bool hasLargeDiameter(Graph &g, int s, int diameter) {
     vector<bool> settled(g.v_max, false);
     int numSettled = 0;
-    priority_queue<Node> pq;
+    custom_priority_queue<Node> pq(g.v_max);
     vector<int> dist(g.v_max, INT_MAX);
     pq.emplace(s, 0);
     dist[s] = 0;
@@ -306,10 +307,10 @@ vector<vector<int>> edgeUnion(vector<vector<int>> &set1,
 
 int diffVertex(vector<int> &set1, vector<int> &set2, int v_max) {
     vector<bool> contains(v_max, false);
-    for (int i : set2)
+    for (int i: set2)
         contains[i] = true;
 
-    for (int i : set1)
+    for (int i: set1)
         if (!contains[i])
             return i;
 
@@ -331,8 +332,8 @@ vector<int> CoreOrLayerRange(Graph &g, Graph &g_rev, int s, int d) {
     vector<bool> settled_rev(g.v_max, false);
     int numSettled = 0;
     int numSettled_rev = 0;
-    priority_queue<Node> pq;
-    priority_queue<Node> pq_rev;
+    custom_priority_queue<Node> pq(g.v_max);
+    custom_priority_queue<Node> pq_rev(g.v_max);
     vector<int> dist(g.v_max, INT_MAX);
     vector<int> dist_rev(g.v_max, INT_MAX);
     pq.push(Node(s, 0));
@@ -417,7 +418,7 @@ Graph createGRev(Graph &g) {
 }
 
 vector<int> oneIterationLayerRange(Graph &g,
-                                   priority_queue<Node> &pq,
+                                   custom_priority_queue<Node> &pq,
                                    vector<bool> &settled,
                                    int numSettled,
                                    vector<vector<int>> &farthestDistancesSeen,
@@ -504,7 +505,7 @@ vector<int> volume(Graph &g, int s, int r) {
     vector<int> output;
     vector<bool> settled(g.v_max, false);
     int numSettled = 0;
-    priority_queue<Node> pq;
+    custom_priority_queue<Node> pq(g.v_max);
     vector<int> dist(g.v_max, INT_MAX);
     pq.push(Node(s, 0));
     dist[s] = 0;
@@ -532,7 +533,7 @@ vector<int> volume(Graph &g, int s, int r) {
 vector<int> Dijkstra(Graph &g, int s) {
     vector<bool> settled(g.v_max, false);
     int numSettled = 0;
-    priority_queue<Node> pq;
+    custom_priority_queue<Node> pq(g.v_max);
     vector<int> dist(g.v_max, INT_MAX);
     pq.push(Node(s, 0));
     dist[s] = 0;
@@ -556,7 +557,7 @@ vector<int> Dijkstra(Graph &g, int s) {
 }
 
 // checked
-void updateNeighbors(Graph &g, int u, vector<bool> &settled, priority_queue<Node> &pq, vector<int> &dist, int d) {
+void updateNeighbors(Graph &g, int u, vector<bool> &settled, custom_priority_queue<Node> &pq, vector<int> &dist, int d) {
     for (int i = 0; i < g.adjacencyList[u].size(); i++) {
         int v = g.adjacencyList[u][i];
         if (!settled[v]) {

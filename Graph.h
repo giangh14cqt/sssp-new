@@ -58,14 +58,35 @@ public:
 
     int time; // Used for SCCs by Tarjan's algorithm
 
-    Graph(const Graph &g) {
-        v_max = g.v_max;
-        vertices = g.vertices;
-        containsVertex = g.containsVertex;
-        n = g.n;
-        adjacencyList = g.adjacencyList;
-        weights = g.weights;
-        time = g.time;
+    Graph(const Graph &g, bool addDummy = false) {
+        if (!addDummy) {
+            v_max = g.v_max;
+            vertices = g.vertices;
+            containsVertex = g.containsVertex;
+            n = g.n;
+            adjacencyList = g.adjacencyList;
+            weights = g.weights;
+            time = g.time;
+        } else {
+            v_max = g.v_max + 1;
+            vertices = g.vertices;
+            containsVertex = g.containsVertex;
+            n = g.n + 1;
+            adjacencyList = g.adjacencyList;
+            weights = g.weights;
+            time = 0;
+
+            vertices.push_back(g.v_max);
+            containsVertex.push_back(true);
+            adjacencyList.push_back(vector<int>());
+            weights.push_back(vector<int>());
+            adjacencyList[g.v_max].reserve(g.n);
+            weights[g.v_max].reserve(g.n);
+            for (int i = 0; i < g.n; ++i) {
+                adjacencyList[g.v_max].emplace_back(g.vertices[i]);
+                weights[g.v_max].emplace_back(0);
+            }
+        }
     }
 
     Graph(int numVertices, bool withAllVertices) {
@@ -82,16 +103,23 @@ public:
             n = numVertices;
         } else
             n = 0;
-        adjacencyList = vector<vector<int>>(numVertices, vector<int>());
-        weights = vector<vector<int>>(numVertices, vector<int>());
+        adjacencyList = vector<vector<int>>(numVertices);
+        weights = vector<vector<int>>(numVertices);
 
         time = 0;
     }
 
-    void addVertices(vector<int> &vertices) {
-        for (int v: vertices) {
-            addVertex(v);
+    void addVertices(vector<int> &vertices_) {
+        for (int &v: vertices_) {
+
+            if (0 <= v && v < v_max && !containsVertex[v]) {
+                containsVertex[v] = true;
+            } else
+                throw_with_nested("Vertex out of bounds or already in graph");
         }
+        vertices.reserve(vertices.size() + vertices_.size());
+        vertices.insert(vertices.end(), vertices_.begin(), vertices_.end());
+        n += vertices_.size();
     }
 
     void addVertex(int v) {
@@ -106,8 +134,8 @@ public:
     void addEdges(int v, vector<int> &outVertices, vector<int> &outWeights) {
         if (outVertices.size() != outWeights.size())
             throw_with_nested("Number of out vertices and weights must be equal");
-        adjacencyList[v] = vector<int> (outVertices.begin(), outVertices.end());
-        weights[v] = vector<int> (outWeights.begin(), outWeights.end());
+        adjacencyList[v] = vector<int>(outVertices.begin(), outVertices.end());
+        weights[v] = vector<int>(outWeights.begin(), outWeights.end());
     }
 
     void displayGraph() {

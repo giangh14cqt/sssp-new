@@ -6,6 +6,7 @@
 #define SSSP_NEW_LDD_H
 
 #include "Randd.h"
+#include "CustomPriorityQueue.h"
 
 vector<vector<int>> preLDD(Graph &g, int d);
 
@@ -29,15 +30,13 @@ vector<vector<int>> edgeUnion(vector<vector<int>> &set1,
                               vector<vector<int>> &set2,
                               vector<vector<int>> &set3);
 
-void addEdgesToSet(set<vector<int>> &set, vector<vector<int>> &edges);
-
 int diffVertex(vector<int> &set1, vector<int> &set2, int v_max);
 
 vector<int> CoreOrLayerRange(Graph &g, Graph &g_rev, int s, int d);
 
 Graph createGRev(Graph &g);
 
-vector<int> oneIterationLayerRange(Graph &g, priority_queue<Node> &pq, vector<bool> &settled,
+vector<int> oneIterationLayerRange(Graph &g, custom_priority_queue<Node> &pq, vector<bool> &settled,
                                    int numSettled, vector<vector<int>> &farthestDistancesSeen, double constant, vector<int> &dist, int d);
 
 bool sameCanonicalRange(vector<vector<int>> &farthestDistancesSeen, double constant);
@@ -48,7 +47,7 @@ vector<int> volume(Graph &g, int s, int r);
 
 vector<int> Dijkstra(Graph &g, int s);
 
-void updateNeighbors(Graph &g, int u, vector<bool> &settled, priority_queue<Node> &pq, vector<int> &dist, int d);
+void updateNeighbors(Graph &g, int u, vector<bool> &settled, custom_priority_queue<Node> &pq, vector<int> &dist, int d);
 
 
 #endif //SSSP_NEW_LDD_H

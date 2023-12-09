@@ -8,40 +8,6 @@ int SRC = 1;
 bool CHECKS = false;
 bool WITH_LDD = false;
 
-Graph readInputTemp(ifstream &inputFile) {
-    int g_size;
-    int maxWeight;
-    inputFile >> g_size >> maxWeight;
-    ++g_size;
-
-    Graph g(g_size, false);
-    vector<vector<int>> edges(g_size);
-    vector<vector<int>> weights(g_size);
-
-    vector<vector<bool>> edge_exists(g_size, vector<bool>(g_size, false));
-    int u, v, w;
-    while (inputFile >> u >> v >> w) {
-        if (u > g_size || v > g_size) {
-            cout << "Error: vertex out of bounds" << endl;
-            exit(1);
-        }
-        if (!g.containsVertex[u])
-            g.addVertex(u);
-
-        if (!g.containsVertex[v])
-            g.addVertex(v);
-
-        if (!edge_exists[u][v]) {
-            edges[u].push_back(v);
-            weights[u].push_back(w);
-            edge_exists[u][v] = true;
-        }
-    }
-    for (int i = 0; i < g_size; i++)
-        g.addEdges(i, edges[i], weights[i]);
-    return g;
-}
-
 Graph readInput(ifstream &inputFile) {
     int g_size;
     inputFile >> g_size; // >> maxWeight;
@@ -86,43 +52,6 @@ Graph readInput(ifstream &inputFile) {
     return g;
 }
 
-vector<int> createRandomPriceFunction(int g_size, int maxWeight) {
-    vector<int> phi(g_size);
-    for (int i = 0; i < g_size; ++i)
-        phi[i] = Random::Get().GenInt(0, maxWeight);
-    return phi;
-}
-
-int getWeight(int weight, int u, int v, vector<int> &phi) {
-    return weight + phi[u] - phi[v];
-}
-
-Graph getConnectedSubgraph(Graph &g) {
-    vector<bool> reachable(g.v_max, false);
-    findReachable(g, SRC, reachable);
-
-    Graph subGraph = Graph(g.v_max, false);
-    for (int v = 0; v < g.v_max; ++v)
-        if (reachable[v])
-            subGraph.addVertex(v);
-
-    for (int u: subGraph.vertices) {
-        vector<int> outVertices;
-        vector<int> weights;
-
-        for (int i = 0; i < g.adjacencyList[u].size(); ++i) {
-            if (reachable[g.adjacencyList[u][i]]) {
-                outVertices.push_back(g.adjacencyList[u][i]);
-                weights.push_back(g.weights[u][i]);
-            }
-        }
-
-        subGraph.addEdges(u, outVertices, weights);
-    }
-
-    return subGraph;
-}
-
 void findReachable(Graph &g, int s, vector<bool> &reachable) {
     reachable[s] = true;
     for (int v: g.adjacencyList[s])
@@ -131,13 +60,14 @@ void findReachable(Graph &g, int s, vector<bool> &reachable) {
 }
 
 vector<int> bitScaling(Graph &g) {
+    Timer::startTimer();
     int minWeight = INT_MAX;
     for (int u: g.vertices)
         for (int i = 0; i < g.adjacencyList[u].size(); ++i)
             minWeight = min(minWeight, g.weights[u][i]);
 
     if (minWeight >= 0) {
-         cout << "Graph is non-negative" << endl;
+        cout << "Graph is non-negative" << endl;
         return getShortestPathTree(g, SRC);
     }
 
@@ -145,33 +75,16 @@ vector<int> bitScaling(Graph &g) {
     vector<int> phi(g.v_max);
 
     while (precision >= 1) {
-        Graph gScaledS(g.v_max + 1, false);
-        gScaledS.addVertices(g.vertices);
-        gScaledS.addVertex(g.v_max);
+        Graph gScaledS(g, true);
 
         for (int u: g.vertices) {
-            int numOutEdges = g.adjacencyList[u].size();
-            vector<int> edges(numOutEdges);
-            vector<int> weights(numOutEdges);
-
-            for (int i = 0; i < numOutEdges; ++i) {
-                int roundedWeight = phi[u] - phi[g.adjacencyList[u][i]] + ceil(g.weights[u][i] / (double) precision);
-                if (roundedWeight < -1)
+            for (int i = 0; i < g.adjacencyList[u].size(); ++i) {
+                gScaledS.weights[u][i] =
+                        phi[u] - phi[g.adjacencyList[u][i]] + ceil(g.weights[u][i] / (double) precision);
+                if (gScaledS.weights[u][i] < -1)
                     throw_with_nested("Bit scaling produced an edge with weight less than -1");
-
-                edges[i] = g.adjacencyList[u][i];
-                weights[i] = roundedWeight;
             }
-            gScaledS.addEdges(u, edges, weights);
         }
-
-        vector<int> dummyEdges(g.n);
-        vector<int> dummyWeights(g.n);
-        for (int i = 0; i < g.n; ++i) {
-            dummyEdges[i] = g.vertices[i];
-            dummyWeights[i] = 0;
-        }
-        gScaledS.addEdges(g.v_max, dummyEdges, dummyWeights);
 
         vector<int> tree = SPMain(gScaledS, g.v_max);
         vector<int> dist(g.v_max + 1);
@@ -208,9 +121,9 @@ vector<int> bitScaling(Graph &g) {
         }
     }
 
-    vector<int> tree = getShortestPathTree(gFinal, SRC);
-
-    return tree;
+    vector<int> dist = getShortestPathDistance(gFinal, SRC);
+    cout << "Bit scaling took " << Timer::getDuration() << " seconds" << endl;
+    return dist;
 }
 
 void verifyTree(Graph &g, vector<int> &tree, vector<int> &dist, int src) {
@@ -400,7 +313,6 @@ vector<vector<int>> SPmainLDD(Graph &g, int diameter) {
     vector<vector<int>> E_sep;
 
     // first remove all the large edges in G
-
     Graph largeEdgesRemoved(g.v_max, false);
     largeEdgesRemoved.addVertices(g.vertices);
 
@@ -421,8 +333,7 @@ vector<vector<int>> SPmainLDD(Graph &g, int diameter) {
 
         largeEdgesRemoved.addEdges(v, outVertices, weights);
     }
-    double CALCULATE_SCC_PROB = g.n / 10000.0;
-    vector<vector<int>> LDD = preLDD(largeEdgesRemoved, diameter, CALCULATE_SCC_PROB);
+    vector<vector<int>> LDD = preLDD(largeEdgesRemoved, diameter);
     E_sep.insert(E_sep.end(), LDD.begin(), LDD.end());
 
     return E_sep;
@@ -720,56 +631,75 @@ Graph createGs(Graph &g) {
 }
 
 vector<int> getShortestPathTree(Graph &g, int s) {
-    set<int> settled;
+    vector<bool> settled(g.v_max);
     custom_priority_queue<Node> pq(g.v_max);
-    vector<int> dist(g.v_max);
-    vector<int> tree(g.v_max);
-
-    for (int i = 0; i < g.v_max; i++) {
-        dist[i] = INT_MAX;
-        tree[i] = -1;
-    }
+    vector<int> dist(g.v_max, INT_MAX);
+    vector<int> tree(g.v_max, -1);
 
     pq.emplace(s, 0);
     dist[s] = 0;
 
-    while (settled.size() != g.n) {
-        if (pq.empty()) {
-            return tree;
-        }
+    while (!pq.empty()) {
         int u = pq.top().node;
         pq.pop();
 
-        if (settled.find(u) != settled.end()) {
+        if (settled[u]) {
             continue;
         }
 
-        settled.emplace(u);
-        updateTreeNeighbors(g, u, tree, settled, pq, dist);
+        settled[u] = true;
+        for (int i = 0; i < g.adjacencyList[u].size(); i++) {
+            int v = g.adjacencyList[u][i];
+            if (!settled[v]) {
+                int weight = g.weights[u][i];
+                int newDistance = dist[u] + weight;
+                if (newDistance < dist[v]) {
+                    dist[v] = newDistance;
+                    tree[v] = u;
+                    pq.emplace(v, dist[v]);
+                }
+            }
+        }
     }
 
     return tree;
 }
 
-void updateTreeNeighbors(Graph &g, int u, vector<int> &tree,
-                         set<int> &settled, custom_priority_queue<Node> &pq,
-                         vector<int> &dist) {
-    for (int i = 0; i < g.adjacencyList[u].size(); i++) {
-        int v = g.adjacencyList[u][i];
-        if (settled.find(v) == settled.end()) {
-            int weight = g.weights[u][i];
-            int newDistance = dist[u] + weight;
-            if (newDistance < dist[v]) {
-                dist[v] = newDistance;
-                tree[v] = u;
-            }
+vector<int> getShortestPathDistance(Graph &g, int s) {
+    vector<bool> settled(g.v_max);
+    custom_priority_queue<Node> pq(g.v_max);
+    vector<int> dist(g.v_max, INT_MAX);
 
-            pq.emplace(v, dist[v]);
+    pq.emplace(s, 0);
+    dist[s] = 0;
+
+    while (!pq.empty()) {
+        int u = pq.top().node;
+        pq.pop();
+
+        if (settled[u]) {
+            continue;
+        }
+
+        settled[u] = true;
+        for (int i = 0; i < g.adjacencyList[u].size(); i++) {
+            int v = g.adjacencyList[u][i];
+            if (!settled[v]) {
+                int weight = g.weights[u][i];
+                int newDistance = dist[u] + weight;
+                if (newDistance < dist[v]) {
+                    dist[v] = newDistance;
+                    pq.emplace(v, dist[v]);
+                }
+            }
         }
     }
+
+    return dist;
 }
 
 vector<int> bellmanFord(Graph &g) {
+    Timer::startTimer();
     vector<int> dist(g.v_max);
     for (int i = 0; i < g.v_max; i++) {
         dist[i] = INT_MAX;
@@ -798,7 +728,7 @@ vector<int> bellmanFord(Graph &g) {
             }
         }
     }
-
+    cout << "Bellman-Ford took " << Timer::getDuration() << " seconds." << endl;
     return dist;
 }
 

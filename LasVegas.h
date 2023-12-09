@@ -6,7 +6,6 @@
 #define SSSP_NEW_LASVEGAS_H
 
 #include "LDD.h"
-#include "CustomPriorityQueue.h"
 
 Graph readInput(ifstream &inputFile);
 
@@ -61,13 +60,12 @@ Graph createGs(Graph &g);
 
 vector<int> getShortestPathTree(Graph &g, int s);
 
-void updateTreeNeighbors(Graph &g, int u, vector<int> &tree, set<int> &settled, custom_priority_queue<Node> &pq,
-                         vector<int> &dist);
-
 vector<int> bellmanFord(Graph &g);
 
 vector<int> getDistFromTree(Graph &g, vector<int> &tree);
 
 void updateDistFromTree(Graph &g, vector<int> &tree, vector<int> &dist, int u);
+
+vector<int> getShortestPathDistance(Graph &g, int s);
 
 #endif //SSSP_NEW_LASVEGAS_H

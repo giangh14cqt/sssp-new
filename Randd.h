@@ -37,6 +37,10 @@ public:
     static int GenInt(int min, int max) {
         return rand() % (max - min + 1) + min;
     }
+
+    static double GenDouble() {
+        return (double) rand() / RAND_MAX;
+    }
 };
 
 #endif //SSSP_NEW_RANDD_H
