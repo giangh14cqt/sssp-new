@@ -25,7 +25,7 @@ vector<vector<int>> preLDD(Graph &g, int d) {
                 vector<int> outVertices;
                 vector<int> weights;
 
-                for (int i = 0; i < g.adjacencyList[v].size(); i++) {
+                for (unsigned long i = 0; i < g.adjacencyList[v].size(); i++) {
                     if (SCCVerts.find(g.adjacencyList[v][i]) != SCCVerts.end()) {
                         outVertices.push_back(g.adjacencyList[v][i]);
                         weights.push_back(g.weights[v][i]);
@@ -70,7 +70,7 @@ bool hasLargeDiameter(Graph &g, int s, int diameter) {
         settled[u] = true;
         numSettled++;
 
-        for (int i = 0; i < g.adjacencyList[u].size(); i++) {
+        for (unsigned long i = 0; i < g.adjacencyList[u].size(); i++) {
             int v = g.adjacencyList[u][i];
             if (!settled[v] && dist[u] + g.weights[u][i] < dist[v]) {
                 dist[v] = dist[u] + g.weights[u][i];
@@ -158,7 +158,7 @@ vector<vector<int>> LDD(Graph &g, int d) {
 
 vector<vector<int>> revEdges(vector<vector<int>> &edges) {
     vector<vector<int>> revEdgeSet(edges.size());
-    for (int i = 0; i < edges.size(); i++) {
+    for (unsigned long i = 0; i < edges.size(); i++) {
         revEdgeSet[i] = vector<int>{edges[i][1], edges[i][0]};
     }
     return revEdgeSet;
@@ -264,7 +264,7 @@ Graph getSubGraph(Graph &g, vector<int> &ball, bool setMinus) {
         vector<int> edges;
         vector<int> weights;
 
-        for (int i = 0; i < g.adjacencyList[u].size(); i++) {
+        for (unsigned long i = 0; i < g.adjacencyList[u].size(); i++) {
             int v = g.adjacencyList[u][i];
 
             if (subGraph.containsVertex[v]) {
@@ -364,34 +364,30 @@ vector<int> CoreOrLayerRange(Graph &g, Graph &g_rev, int s, int d) {
         if (!finished) {
             vector<int> result = oneIterationLayerRange(g, pq, settled, numSettled, farthestDistancesSeen, constant,
                                                         dist, d);
-            for (vector<int> i: farthestDistancesSeen)
-                for (int i: result)
-                    if (!result.empty()) {
-                        if (result[0] == 1) {
-                            j = result[1];
-                            finished = true;
-                        } else if (result[0] == 2) {
-                            // case 2
-                            return vector<int>{2, result[1]};
-                        }
-                    }
+            if (!result.empty()) {
+                if (result[0] == 1) {
+                    j = result[1];
+                    finished = true;
+                } else if (result[0] == 2) {
+                    // case 2
+                    return vector<int>{2, result[1]};
+                }
+            }
             numSettled++;
         }
 
         if (!finished_rev) {
             vector<int> result_rev = oneIterationLayerRange(g_rev, pq_rev, settled_rev, numSettled_rev,
                                                             farthestDistancesSeen_rev, constant, dist_rev, d);
-            for (vector<int> i: farthestDistancesSeen_rev)
-                for (int i: result_rev)
-                    if (!result_rev.empty()) {
-                        if (result_rev[0] == 1) {
-                            j_rev = result_rev[1];
-                            finished_rev = true;
-                        } else if (result_rev[0] == 2) {
-                            // case 3
-                            return vector<int>{3, result_rev[1]};
-                        }
-                    }
+            if (!result_rev.empty()) {
+                if (result_rev[0] == 1) {
+                    j_rev = result_rev[1];
+                    finished_rev = true;
+                } else if (result_rev[0] == 2) {
+                    // case 3
+                    return vector<int>{3, result_rev[1]};
+                }
+            }
             numSettled_rev++;
         }
     }
@@ -406,7 +402,7 @@ Graph createGRev(Graph &g) {
     vector<vector<int>> weights(g.v_max);
 
     for (int v: g.vertices) {
-        for (int i = 0; i < g.adjacencyList[v].size(); i++) {
+        for (unsigned long i = 0; i < g.adjacencyList[v].size(); i++) {
             edges[g.adjacencyList[v][i]].push_back(v);
             weights[g.adjacencyList[v][i]].push_back(g.weights[v][i]);
         }
@@ -533,7 +529,6 @@ vector<int> volume(Graph &g, int s, int r) {
 // checked
 vector<int> Dijkstra(Graph &g, int s) {
     vector<bool> settled(g.v_max, false);
-    int numSettled = 0;
     custom_priority_queue<Node> pq(g.v_max);
     vector<int> dist(g.v_max, INT_MAX);
     pq.push(Node(s, 0));
@@ -547,7 +542,6 @@ vector<int> Dijkstra(Graph &g, int s) {
             continue;
 
         settled[u] = true;
-        numSettled++;
 
         updateNeighbors(g, u, settled, pq, dist, INT_MAX);
     }
@@ -555,8 +549,9 @@ vector<int> Dijkstra(Graph &g, int s) {
 }
 
 // checked
-void updateNeighbors(Graph &g, int u, vector<bool> &settled, custom_priority_queue<Node> &pq, vector<int> &dist, int d) {
-    for (int i = 0; i < g.adjacencyList[u].size(); i++) {
+void
+updateNeighbors(Graph &g, int u, vector<bool> &settled, custom_priority_queue<Node> &pq, vector<int> &dist, int d) {
+    for (unsigned long i = 0; i < g.adjacencyList[u].size(); i++) {
         int v = g.adjacencyList[u][i];
         if (!settled[v]) {
             int newDistance = dist[u] + g.weights[u][i];

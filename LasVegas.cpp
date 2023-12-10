@@ -52,14 +52,14 @@ vector<int> bitScaling(Graph &g) {
     Timer::startTimer();
     int minWeight = INT_MAX;
     for (int u: g.vertices)
-        for (int i = 0; i < g.adjacencyList[u].size(); ++i)
+        for (unsigned long i = 0; i < g.adjacencyList[u].size(); ++i)
             minWeight = min(minWeight, g.weights[u][i]);
 
     if (minWeight >= 0) {
-        cout << "Graph is non-negative" << endl;
+//        cout << "Graph is non-negative" << endl;
 
         vector<int> dist = Dijkstra(g, SRC);
-        cout << "Bit scaling took " << Timer::getDuration() << " seconds" << endl;
+        cout << "Finished: " << Timer::getDuration() << " ms" << endl;
         return dist;
     }
 
@@ -70,7 +70,7 @@ vector<int> bitScaling(Graph &g) {
         Graph gScaledS(g, true);
 
         for (int u: g.vertices) {
-            for (int i = 0; i < g.adjacencyList[u].size(); ++i) {
+            for (unsigned long i = 0; i < g.adjacencyList[u].size(); ++i) {
                 gScaledS.weights[u][i] =
                         phi[u] - phi[g.adjacencyList[u][i]] + ceil(g.weights[u][i] / (double) precision);
                 if (gScaledS.weights[u][i] < -1)
@@ -104,7 +104,7 @@ vector<int> bitScaling(Graph &g) {
     Graph gFinal(g);
 
     for (int u: gFinal.vertices) {
-        for (int i = 0; i < gFinal.adjacencyList[u].size(); ++i) {
+        for (unsigned long i = 0; i < gFinal.adjacencyList[u].size(); ++i) {
             gFinal.weights[u][i] += phi[u] - phi[gFinal.adjacencyList[u][i]];
 
             if (gFinal.weights[u][i] < 0) {
@@ -115,7 +115,7 @@ vector<int> bitScaling(Graph &g) {
 
     vector<int> tree = getShortestPathTree(gFinal, SRC);
     vector<int> dist = getDistFromTree(g, tree);
-    cout << "Bit scaling took " << Timer::getDuration() << " seconds" << endl;
+    cout << "Finished: " << Timer::getDuration() << " ms" << endl;
     return dist;
 }
 
@@ -131,7 +131,7 @@ void verifyTree(Graph &g, vector<int> &tree, vector<int> &dist, int src) {
     if (containsCycles(g, adjList, src, visited))
         throw_with_nested("Tree contains a cycle");
     for (int u: g.vertices) {
-        for (int i = 0; i < g.adjacencyList[u].size(); ++i) {
+        for (unsigned long i = 0; i < g.adjacencyList[u].size(); ++i) {
             int v = g.adjacencyList[u][i];
             if (dist[v] > dist[u] + g.weights[u][i])
                 throw_with_nested("SPMain returned a tree that is not a shortest paths tree.");
@@ -156,7 +156,7 @@ void getDistances(Graph &g, vector<int> &tree, vector<int> &dist, int curDis, in
         dist[curVertex] = curDis;
         visited[curVertex] = true;
 
-        for (int i = 0; i < g.adjacencyList[curVertex].size(); i++) {
+        for (unsigned long i = 0; i < g.adjacencyList[curVertex].size(); i++) {
             int v = g.adjacencyList[curVertex][i];
             if (tree[v] == curVertex) {
                 getDistances(g, tree, dist, curDis + g.weights[curVertex][i], v, visited);
@@ -185,7 +185,7 @@ vector<int> SPMain(Graph &g_in, int s) {
 
     // create G^*
     for (int u: g.vertices) {
-        for (int i = 0; i < g.adjacencyList[u].size(); i++) {
+        for (unsigned long i = 0; i < g.adjacencyList[u].size(); i++) {
             g.weights[u][i] += phi[u] - phi[g.adjacencyList[u][i]] + 1;
 
             if (CHECKS && g.weights[u][i] < 0) {
@@ -212,7 +212,7 @@ Graph getScaledGraph(Graph &g_in, int scaleFactor) {
         vector<int> edges(g_in.adjacencyList[u].size());
         vector<int> weights(g_in.adjacencyList[u].size());
 
-        for (int i = 0; i < g_in.adjacencyList[u].size(); ++i) {
+        for (unsigned long i = 0; i < g_in.adjacencyList[u].size(); ++i) {
             edges[i] = g_in.adjacencyList[u][i];
             weights[i] = g_in.weights[u][i] * scaleFactor;
         }
@@ -223,7 +223,7 @@ Graph getScaledGraph(Graph &g_in, int scaleFactor) {
 }
 
 bool invalidTree(Graph &g, int s, vector<int> &tree) {
-    for (int u = 0; u < tree.size(); ++u) {
+    for (unsigned long u = 0; u < tree.size(); ++u) {
         if (g.containsVertex[u]) {
             if (u != s && tree[u] == -1)
                 return true;
@@ -290,7 +290,6 @@ vector<int> ScaleDown(Graph &g, int delta, int B) {
         if (CHECKS && hasNegativeEdges(g_B_Esep, phi_2, 0))
             throw_with_nested("FixDAGEdges failed.");
     }
-
     // phase 3
     Graph g_B_phi2 = createModifiedGB(g, B, false, emptyRem, phi_2);
     vector<int> phi_prime = ElimNeg(g_B_phi2);
@@ -313,7 +312,7 @@ vector<vector<int>> SPmainLDD(Graph &g, int diameter) {
         vector<int> outVertices;
         vector<int> weights;
 
-        for (int i = 0; i < g.adjacencyList[v].size(); i++) {
+        for (unsigned long i = 0; i < g.adjacencyList[v].size(); i++) {
             if (g.weights[v][i] > diameter) {
                 // edge is too big, can add to E_sep
                 vector<int> edge = {v, g.adjacencyList[v][i]};
@@ -334,7 +333,7 @@ vector<vector<int>> SPmainLDD(Graph &g, int diameter) {
 
 bool hasNegativeEdges(Graph &g, vector<int> &phi, int B) {
     for (int u: g.vertices) {
-        for (int i = 0; i < g.adjacencyList[u].size(); i++) {
+        for (unsigned long i = 0; i < g.adjacencyList[u].size(); i++) {
             if (g.weights[u][i] + phi[u] - phi[g.adjacencyList[u][i]] < -1 * B) {
                 return true;
             }
@@ -354,17 +353,17 @@ bool hasNegativeEdges(Graph &g, vector<int> &phi, int B) {
 Graph createModifiedGB(Graph &g, int B, bool nneg, set<vector<int>> &remEdges, vector<int> &phi) {
     Graph modG(g.v_max, false);
     modG.addVertices(g.vertices);
-    vector<int> edges, weights;
 
     for (int u: g.vertices) {
-        edges = vector<int>(g.adjacencyList[u].size());
-        weights = vector<int>(g.adjacencyList[u].size());
+        vector<int> edges, weights;
+        edges.reserve(g.adjacencyList[u].size());
+        weights.reserve(g.adjacencyList[u].size());
 
-        for (int i = 0; i < g.adjacencyList[u].size(); i++) {
+        for (unsigned long i = 0; i < g.adjacencyList[u].size(); i++) {
             int v = g.adjacencyList[u][i];
 
             vector<int> edge = {u, v};
-            if ((remEdges.empty()) || (remEdges.find(edge) != remEdges.end())) {
+            if ((remEdges.empty()) || (remEdges.find(edge) == remEdges.end())) {
                 int weight = g.weights[u][i];
 
                 if (weight < 0) {
@@ -377,8 +376,8 @@ Graph createModifiedGB(Graph &g, int B, bool nneg, set<vector<int>> &remEdges, v
                     weight += phi[u] - phi[v];
                 }
 
-                edges[i] = v;
-                weights[i] = weight;
+                edges.push_back(v);
+                weights.push_back(weight);
             }
         }
 
@@ -404,7 +403,7 @@ set<vector<int>> getEdgesBetweenSCCs(Graph &g, vector<int> &vertexToSCCMap) {
 
 vector<int> getVertexToSCCMap(vector<vector<int>> &SCCs, int numVertices) {
     vector<int> vertexToSCCMap(numVertices, 0);
-    for (int i = 0; i < SCCs.size(); i++) {
+    for (unsigned long i = 0; i < SCCs.size(); i++) {
         for (int v: SCCs[i]) {
             vertexToSCCMap[v] = i;
         }
@@ -418,7 +417,7 @@ vector<int> addPhi(vector<int> &phi_1, vector<int> &phi_2) {
         throw_with_nested("addPhi: phi_1 and phi_2 must have the same length.");
 
     vector<int> phi(phi_1.size());
-    for (int i = 0; i < phi_1.size(); i++) {
+    for (unsigned long i = 0; i < phi_1.size(); i++) {
         phi[i] = phi_1[i] + phi_2[i];
     }
     return phi;
@@ -435,7 +434,7 @@ vector<int> FixDAGEdges(Graph &g,
     vector<int> mu(n, 0); // indices are in topological order (e.g., index 0 corresponds to the first SCC
     // in topological order)
     for (int u: g.vertices) {
-        for (int i = 0; i < g.adjacencyList[u].size(); i++) {
+        for (unsigned long i = 0; i < g.adjacencyList[u].size(); i++) {
             int v = g.adjacencyList[u][i];
 
             int SCCu = vertexToSCCMap[u];
@@ -545,7 +544,6 @@ vector<int> ElimNeg(Graph &g) {
     inPQ[s] = true;
 
     set<int> marked;
-
     while (!pq.empty()) {
         // Dijkstra Phase
         while (!pq.empty()) {
@@ -556,12 +554,11 @@ vector<int> ElimNeg(Graph &g) {
                 continue;
             }
 
-
             inPQ[v] = false;
 
             marked.emplace(v);
 
-            for (int i = 0; i < Gs.adjacencyList[v].size(); i++) {
+            for (unsigned long i = 0; i < Gs.adjacencyList[v].size(); i++) {
                 int x = Gs.adjacencyList[v][i];
                 int edgeWeight = Gs.weights[v][i];
 
@@ -577,7 +574,7 @@ vector<int> ElimNeg(Graph &g) {
 
         // Bellman-Ford Phase
         for (int v: marked) {
-            for (int i = 0; i < Gs.adjacencyList[v].size(); i++) {
+            for (unsigned long i = 0; i < Gs.adjacencyList[v].size(); i++) {
                 int x = Gs.adjacencyList[v][i];
                 int edgeWeight = Gs.weights[v][i];
 
@@ -641,7 +638,7 @@ vector<int> getShortestPathTree(Graph &g, int s) {
         }
 
         settled[u] = true;
-        for (int i = 0; i < g.adjacencyList[u].size(); i++) {
+        for (unsigned long i = 0; i < g.adjacencyList[u].size(); i++) {
             int v = g.adjacencyList[u][i];
             if (!settled[v]) {
                 int weight = g.weights[u][i];
@@ -668,7 +665,7 @@ vector<int> bellmanFord(Graph &g) {
     dist[SRC] = 0;
     for (int i = 1; i < g.v_max; i++) {
         for (int u: g.vertices) {
-            for (int j = 0; j < g.adjacencyList[u].size(); j++) {
+            for (unsigned long j = 0; j < g.adjacencyList[u].size(); j++) {
                 int v = g.adjacencyList[u][j];
                 int weight = g.weights[u][j];
 
@@ -680,7 +677,7 @@ vector<int> bellmanFord(Graph &g) {
     }
 
     for (int u: g.vertices) {
-        for (int j = 0; j < g.adjacencyList[u].size(); j++) {
+        for (unsigned long j = 0; j < g.adjacencyList[u].size(); j++) {
             int v = g.adjacencyList[u][j];
             int weight = g.weights[u][j];
 
@@ -689,7 +686,7 @@ vector<int> bellmanFord(Graph &g) {
             }
         }
     }
-    cout << "Bellman-Ford took " << Timer::getDuration() << " seconds." << endl;
+    cout << "Finished: " << Timer::getDuration() << " ms." << endl;
     return dist;
 }
 
@@ -703,7 +700,7 @@ vector<int> getDistFromTree(Graph &g, vector<int> &tree) {
 }
 
 void updateDistFromTree(Graph &g, vector<int> &tree, vector<int> &dist, int u) {
-    for (int i = 0; i < g.adjacencyList[u].size(); i++) {
+    for (unsigned long i = 0; i < g.adjacencyList[u].size(); i++) {
         int v = g.adjacencyList[u][i];
         int weight = g.weights[u][i];
 

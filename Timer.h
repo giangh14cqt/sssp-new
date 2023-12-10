@@ -16,7 +16,7 @@ public:
     static double getDuration() {
         auto endTime = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(endTime - getInstance().startTime);
-        return duration.count() * 1e-6; // Convert to seconds
+        return duration.count() * 1e-3; // Convert to milliseconds
     }
 
     static void startDebugTimer() {

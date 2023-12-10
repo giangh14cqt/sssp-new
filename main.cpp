@@ -1,13 +1,16 @@
 #include "LasVegas.h"
 
-int main() {
-    string filename;
-    cout << "Enter filename (eg: \"../graph/500_2.txt\"): ";
-    cin >> filename;
-    cout << "Enter source vertex: ";
-    cin >> SRC;
-    cout << "Enter 1 for LDD, 0 for no LDD: ";
-    cin >> WITH_LDD;
+int main(int argc, char *argv[]) {
+    string filename = argv[1];
+    WITH_LDD = stoi(argv[2]);
+    if (argc == 4) {
+        SRC = stoi(argv[3]);
+    } else {
+        SRC = 0;
+    }
+//    string filename = "../graph/20.0.1.txt";
+//    WITH_LDD = 1;
+//    SRC = 0;
     Random::Get().Seed();
     ifstream inputFile(filename);
     Graph g = readInput(inputFile);
@@ -15,7 +18,7 @@ int main() {
     try {
         BellManFord = bellmanFord(g);
     } catch (const char *msg) {
-        cout << msg << endl;
+        cout << "Failed: " << msg << endl;
         return 0;
     }
     vector<int> LasVegas;
@@ -23,17 +26,16 @@ int main() {
         LasVegas = bitScaling(g);
     }
     catch (const char *msg) {
-        cout << msg << endl;
+        cout << "Failed: "  << msg << endl;
         return 0;
     }
 
-    for (int i = 0; i < BellManFord.size(); i++) {
+    for (unsigned long i = 0; i < BellManFord.size(); i++) {
         if (BellManFord[i] != LasVegas[i]) {
-            cout << "Bellman-Ford and Las Vegas are not equal" << endl;
-            cout << i << ' ' << BellManFord[i] << " " << LasVegas[i] << endl;
+            cout << "Failed: Bellman-Ford and Las Vegas are not equal" << endl;
             return 0;
         }
     }
-    cout << "Bellman-Ford and Las Vegas are equal" << endl;
+    cout << "Succeeded: Bellman-Ford and Las Vegas are equal" << endl;
     return 0;
 }

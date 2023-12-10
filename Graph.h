@@ -143,7 +143,7 @@ public:
         for (int i = 0; i < v_max; i++) {
             if (containsVertex[i]) {
                 cout << "Vertex " << i << " has out edges: ";
-                for (int j = 0; j < adjacencyList[i].size(); j++) {
+                for (unsigned long j = 0; j < adjacencyList[i].size(); j++) {
                     cout << adjacencyList[i][j] << " with weight " << weights[i][j] << ", ";
                 }
                 cout << endl;
@@ -157,7 +157,7 @@ public:
         vector<int> vertsToN = vector<int>(v_max, 0);
         vector<int> NtoVerts = vector<int>(n, 0);
 
-        for (int i = 0; i < vertices.size(); ++i) {
+        for (unsigned long i = 0; i < vertices.size(); ++i) {
             vertsToN[vertices[i]] = i;
             NtoVerts[i] = vertices[i];
         }
@@ -169,7 +169,7 @@ public:
         vector<bool> stackMember = vector<bool>(n, false);
         stack<int> st;
 
-        vector<vector<int>> SCCverts = vector<vector<int>>();
+        vector<vector<int>> SCCverts;// = vector<vector<int>>();
 
         for (int i = 0; i < n; ++i) {
             if (disc[i] == -1) {
@@ -193,6 +193,7 @@ public:
             int v = vertsToN[v_true];
             if (disc[v] == -1) {
                 vector<vector<int>> SCCTmp = SCCUtil(v, low, disc, stackMember, st, vertsToN, NtoVerts);
+                SCCverts.reserve(SCCverts.size() + SCCTmp.size());
                 SCCverts.insert(SCCverts.end(), SCCTmp.begin(), SCCTmp.end());
                 low[u] = min(low[u], low[v]);
             } else if (stackMember[v])
@@ -205,7 +206,7 @@ public:
             while (w != u) {
                 w = st.top();
                 st.pop();
-                SCC.push_back(w);
+                SCC.push_back(NtoVerts[w]);
                 stackMember[w] = false;
             }
             SCCverts.push_back(SCC);
@@ -219,7 +220,7 @@ public:
         vector<int> vertsToN = vector<int>(v_max, -1);
         vector<int> NtoVerts = vector<int>(n, -1);
 
-        for (int i = 0; i < vertices.size(); ++i) {
+        for (unsigned long i = 0; i < vertices.size(); ++i) {
             vertsToN[vertices[i]] = i;
             NtoVerts[i] = vertices[i];
         }
@@ -249,7 +250,7 @@ public:
         for (int i = 1; i <= n - 1; ++i) {
             for (int u = 0; u < n; ++u) {
                 int u_real = NtoVerts[u];
-                for (int j = 0; j < adjacencyList[u_real].size(); ++j) {
+                for (unsigned long j = 0; j < adjacencyList[u_real].size(); ++j) {
                     int v_real = adjacencyList[u_real][j];
                     int v = vertsToN[v_real];
                     int weight = weights[u_real][j];
@@ -261,7 +262,7 @@ public:
 
         for (int u = 0; u < n; ++u) {
             int u_real = NtoVerts[u];
-            for (int j = 0; j < adjacencyList[u_real].size(); ++j) {
+            for (unsigned long j = 0; j < adjacencyList[u_real].size(); ++j) {
                 int v_real = adjacencyList[u_real][j];
                 int v = vertsToN[v_real];
                 int weight = weights[u_real][j];
@@ -277,7 +278,7 @@ public:
         vector<int> vertsToN = vector<int>(v_max, -1);
         vector<int> NtoVerts = vector<int>(n, -1);
 
-        for (int i = 0; i < vertices.size(); ++i) {
+        for (unsigned long i = 0; i < vertices.size(); ++i) {
             vertsToN[vertices[i]] = i;
             NtoVerts[i] = vertices[i];
         }
@@ -290,7 +291,7 @@ public:
         for (int i = 1; i < n; ++i) {
             for (int u = 0; u < n; ++u) {
                 int u_real = NtoVerts[u];
-                for (int j = 0; j < adjacencyList[u_real].size(); ++j) {
+                for (unsigned long j = 0; j < adjacencyList[u_real].size(); ++j) {
                     int v_real = adjacencyList[u_real][j];
                     int v = vertsToN[v_real];
                     int weight = weights[u_real][j];
@@ -303,7 +304,7 @@ public:
 
     bool hasNoNegativeEdgeWeights() {
         for (int v: vertices) {
-            for (int i = 0; i < adjacencyList[v].size(); ++i) {
+            for (unsigned long i = 0; i < adjacencyList[v].size(); ++i) {
                 if (weights[v][i] < 0)
                     return false;
             }
