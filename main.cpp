@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
     } else {
         SRC = 0;
     }
-//    string filename = "../graph/20.0.1.txt";
+//    string filename = "../graph/5000_25.txt";
 //    WITH_LDD = 1;
 //    SRC = 0;
     Random::Get().Seed();
