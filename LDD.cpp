@@ -3,107 +3,33 @@
 //
 #include "LDD.h"
 
+const int LDD_BASE_CASE = 10;
+
 
 vector<vector<int>> preLDD(Graph &g, int d) {
-    // only run LDD if the graph is large enough
-    if (g.n > 1000)
-        return LDD(g, d);
-    vector<vector<int>> SCCs = g.SCC();
-    vector<vector<int>> E_sep;
-
-    if (SCCs.size() == 1)
-        return LDD(g, d);
-
-    for (vector<int> SCC: SCCs)
-        if (SCC.size() > 1) {
-            Graph SCCSubgraph(g.v_max, false);
-            SCCSubgraph.addVertices(SCC);
-
-            set<int> SCCVerts(SCC.begin(), SCC.end());
-
-            for (int v: SCC) {
-                vector<int> outVertices;
-                vector<int> weights;
-
-                for (unsigned long i = 0; i < g.adjacencyList[v].size(); i++) {
-                    if (SCCVerts.find(g.adjacencyList[v][i]) != SCCVerts.end()) {
-                        outVertices.push_back(g.adjacencyList[v][i]);
-                        weights.push_back(g.weights[v][i]);
-                    }
-                }
-
-                SCCSubgraph.addEdges(v, outVertices, weights);
-            }
-
-            int src = SCC[rand() % SCC.size()];
-            if (hasLargeDiameter(SCCSubgraph, src, d)) {
-                vector<vector<int>> SCCSubgraphLDD = LDD(SCCSubgraph, d);
-                for (const auto &vv: SCCSubgraphLDD) {
-                    E_sep.push_back(vv);
-                }
-            }
-        }
-    return E_sep;
+    return LDD(g, d);
 }
 
-bool hasLargeDiameter(Graph &g, int s, int diameter) {
-    vector<bool> settled(g.v_max, false);
-    int numSettled = 0;
-    custom_priority_queue<Node> pq(g.v_max);
-    vector<int> dist(g.v_max, INT_MAX);
-    pq.emplace(s, 0);
-    dist[s] = 0;
-
-    while (numSettled != g.n) {
-        if (pq.empty())
-            return false;
-
-        int u = pq.top().node;
-        pq.pop();
-
-        if (settled[u])
-            continue;
-
-        if (dist[u] > diameter)
-            return true;
-
-        settled[u] = true;
-        numSettled++;
-
-        for (unsigned long i = 0; i < g.adjacencyList[u].size(); i++) {
-            int v = g.adjacencyList[u][i];
-            if (!settled[v] && dist[u] + g.weights[u][i] < dist[v]) {
-                dist[v] = dist[u] + g.weights[u][i];
-                pq.emplace(v, dist[v]);
-            }
-        }
-    }
-    return false;
-}
-
-/*
-OUTPUT: A set of edges e_sep with the following guarantees:
-– each SCC of G\e_sep has weak diameter at most D; that is, if u,v are in the
-same SCC,
-then dist_G(u, v) ≤ D and dist_G(v, u) ≤ D.
-– For every e ∈ E, Pr[e ∈ e_sep] = O(w(e)·(logn)^2/D +n^−10). These
-probabilities are not
-guaranteed to be independent.
-Each int[] in the output ArrayList has size two and represents an edge
-(int[0], int[1])
-*/
+// OUTPUT: A set of edges e_sep with the following guarantees:
+// – each SCC of G\e_sep has weak diameter at most D; that is, if u,v are in the
+// same SCC,
+// then dist_G(u, v) ≤ D and dist_G(v, u) ≤ D.
+// – For every e ∈ E, Pr[e ∈ e_sep] = O(w(e)·(logn)^2/D +n^−10). These
+// probabilities are not
+// guaranteed to be independent.
+// Each vector<int> in the output ArrayList has size two and represents an edge
+// (int[0], int[1])
 vector<vector<int>> LDD(Graph &g, int d) {
-    int LDD_BASE_CASE = 10;
-    if (g.n <= max(1, LDD_BASE_CASE))
-        return {};
+//        if (g.n <= max(1, LDD_BASE_CASE)) {
+//            return {};
+//        }
 
     Graph g_rev = createGRev(g);
 
-    // pick a good, well-connected source vertex
-    int s = g.vertices[0];
+    int s = -1;
     bool foundGoodS = false;
     for (int v: g.vertices) {
-        if (g.adjacencyList[v].size() >= 1 || !g_rev.adjacencyList[v].empty()) {
+        if (!g.adjacencyList[v].empty() || !g_rev.adjacencyList[v].empty()) {
             s = v;
             foundGoodS = true;
             break;
@@ -147,26 +73,23 @@ vector<vector<int>> LDD(Graph &g, int d) {
         vector<vector<int>> layer_g_rev = layer(g_rev, ball);
         vector<vector<int>> preLDD_subGraph = preLDD(subGraph, d);
         vector<vector<int>> preLDD_minusSubGraph = preLDD(minusSubGraph, d);
-        layer_g_rev = revEdges(layer_g_rev);
-        preLDD_subGraph = revEdges(preLDD_subGraph);
-        preLDD_minusSubGraph = revEdges(preLDD_minusSubGraph);
-        return edgeUnion(layer_g_rev, preLDD_subGraph, preLDD_minusSubGraph);
+        vector<vector<int>> rev = edgeUnion(layer_g_rev, preLDD_subGraph, preLDD_minusSubGraph);
+        return revEdges(rev);
     }
 
-    throw_with_nested("Error: condAndi_max[0] is not 1, 2, or 3");
+    throw_with_nested("LowDiamDecomposition failed.");
 }
 
 vector<vector<int>> revEdges(vector<vector<int>> &edges) {
     vector<vector<int>> revEdgeSet(edges.size());
     for (unsigned long i = 0; i < edges.size(); i++) {
-        revEdgeSet[i] = vector<int>{edges[i][1], edges[i][0]};
+        revEdgeSet[i] = {edges[i][1], edges[i][0]};
     }
     return revEdgeSet;
 }
 
 double calculateGeoProb(int n, int r) {
-    double logn = log(n);
-    double prob = logn * logn / r;
+    double prob = pow(log(n), 2) / r;
     return min(1.0, prob);
 }
 
@@ -183,7 +106,7 @@ vector<vector<int>> RandomTrim(Graph &g, Graph &g_rev, int s, int d) {
     int over4DVert = -1;
 
     vector<int> v_far;
-    for (int v: g.vertices)
+    for (int v: g.vertices) {
         if (max(dist[v], dist_rev[v]) > 2 * d) {
             v_far.push_back(v);
             if (max(dist[v], dist_rev[v]) > 4 * d) {
@@ -191,51 +114,55 @@ vector<vector<int>> RandomTrim(Graph &g, Graph &g_rev, int s, int d) {
                 over4DVert = v;
             }
         }
+    }
 
     // base case
     if (numDistOver4D <= 1) {
         if (numDistOver4D == 1) {
             for (int v: g.adjacencyList[over4DVert]) {
-                e_sep.push_back(vector<int>{over4DVert, v});
+                e_sep.push_back({over4DVert, v});
             }
         }
         return e_sep;
     }
 
-    vector<int> m;
+    vector<int> m; // marked vertices
     int i_max = d;
     int r = (int) ceil(d / (3.0 * log(g.n)));
     int i_min = i_max - r;
-
-    int v = diffVertex(v_far, m, g.v_max);
 
     random_device rd;
     mt19937 gen(rd());
     geometric_distribution<int> distr(calculateGeoProb(g.n, r));
 
+    int v = diffVertex(v_far, m, g.v_max);
     while (v != -1) {
         int i_rnd = i_min + min(distr(gen), r);
 
         if (dist_rev[v] > 2 * d) {
-            Graph gVminusM = getSubGraph(g, m, true);
-            vector<int> ball = volume(gVminusM, v, i_rnd);
-            Graph GVMinusMSubGraph = getSubGraph(gVminusM, ball, false);
-            vector<vector<int>> layer_gVminusM = layer(gVminusM, ball);
+            Graph gVMinusM = getSubGraph(g, m, true);
+            vector<int> ball = volume(gVMinusM, v, i_rnd);
+            Graph GVMinusMSubGraph = getSubGraph(gVMinusM, ball, false);
+//                e_sep = edgeUnion(e_sep, layer(gVMinusM, ball), preLDD(GVMinusMSubGraph, d));
+            vector<vector<int>> layer_gVMinusM = layer(gVMinusM, ball);
             vector<vector<int>> preLDD_GVMinusMSubGraph = preLDD(GVMinusMSubGraph, d);
-            e_sep = edgeUnion(e_sep, layer_gVminusM, preLDD_GVMinusMSubGraph);
+            e_sep = edgeUnion(e_sep, layer_gVMinusM, preLDD_GVMinusMSubGraph);
             m = vertexUnion(m, ball);
         } else if (dist[v] > 2 * d) {
-            Graph gVminusM_rev = getSubGraph(g_rev, m, true);
-            vector<int> ball_rev = volume(gVminusM_rev, v, i_rnd);
-            Graph GVMinusMSubGraph_rev = getSubGraph(gVminusM_rev, ball_rev, false);
-            vector<vector<int>> layer_gVminusM_rev = layer(gVminusM_rev, ball_rev);
+            Graph gVMinusM_rev = getSubGraph(g_rev, m, true);
+            vector<int> ball_rev = volume(gVMinusM_rev, v, i_rnd);
+            Graph GVMinusMSubGraph_rev = getSubGraph(gVMinusM_rev, ball_rev, false);
+//                e_sep = edgeUnion(e_sep, revEdges(layer(gVMinusM_rev, ball_rev)),
+//                                  revEdges(preLDD(GVMinusMSubGraph_rev, d)));
+            vector<vector<int>> layer_gVminusM_rev = layer(gVMinusM_rev, ball_rev);
             vector<vector<int>> preLDD_GVMinusMSubGraph_rev = preLDD(GVMinusMSubGraph_rev, d);
             layer_gVminusM_rev = revEdges(layer_gVminusM_rev);
             preLDD_GVMinusMSubGraph_rev = revEdges(preLDD_GVMinusMSubGraph_rev);
             e_sep = edgeUnion(e_sep, layer_gVminusM_rev, preLDD_GVMinusMSubGraph_rev);
             m = vertexUnion(m, ball_rev);
-        } else
-            throw_with_nested("Error: dist[v] and dist_rev[v] are both <= 2 * d");
+        } else {
+            throw_with_nested("RandomTrim failed.");
+        }
 
         v = diffVertex(v_far, m, g.v_max);
     }
@@ -281,20 +208,10 @@ Graph getSubGraph(Graph &g, vector<int> &ball, bool setMinus) {
 // returns the union of two vertex sets
 vector<int> vertexUnion(vector<int> &set1, vector<int> &set2) {
     set<int> set;
-    addVerticesToSet(set, set1);
-    addVerticesToSet(set, set2);
+    set.insert(set1.begin(), set1.end());
+    set.insert(set2.begin(), set2.end());
 
-    vector<int> output;
-    output.reserve(set.size());
-    for (int i: set)
-        output.push_back(i);
-
-    return output;
-}
-
-void addVerticesToSet(set<int> &set, vector<int> &vertices) {
-    for (int i: vertices)
-        set.insert(i);
+    return vector<int>(set.begin(), set.end());
 }
 
 vector<vector<int>> edgeUnion(vector<vector<int>> &set1,
@@ -321,8 +238,10 @@ int diffVertex(vector<int> &set1, vector<int> &set2, int v_max) {
 // OUTPUT: a pair (Condition,i) where Condition ∈ {1,2,3} and i ≤ D is a
 // non-negative integer such that
 // – if Condition = 1 then n_G(s,i) > 2n and n_G_rev(s,i) > 2n,
-// - if Condition = 2 then n_G(s, i) ≤ 2n and Vol_G(s, i) and Vol_G(s, i − ⌈D/(3lgn)⌉) are the same canonical range,
-// – if Condition = 3 then n_G_rev(s, i) ≤ 2n and Vol_G_rev(s, i) and Vol_G_rev(s, i − ⌈D/(3lgn)⌉) are in the same canonical range.
+// - if Condition = 2 then n_G(s, i) ≤ 2n and Vol_G(s, i) and Vol_G(s, i −
+// ⌈D/(3lgn)⌉) are the same canonical range,
+// – if Condition = 3 then n_G_rev(s, i) ≤ 2n and Vol_G_rev(s, i) and
+// Vol_G_rev(s, i − ⌈D/(3lgn)⌉) are in the same canonical range.
 // If Condition ∈ {2, 3} then i ≥ D/(3lgn).
 // Runs LayerRange on G and G_rev in parallel.
 vector<int> CoreOrLayerRange(Graph &g, Graph &g_rev, int s, int d) {
@@ -330,17 +249,15 @@ vector<int> CoreOrLayerRange(Graph &g, Graph &g_rev, int s, int d) {
     vector<vector<int>> farthestDistancesSeen_rev;
     double constant = d / (3.0 * log(g.n));
     vector<bool> settled(g.v_max, false);
-    vector<bool> settled_rev(g.v_max, false);
+    vector<bool> settled_rev(g_rev.v_max, false);
     int numSettled = 0;
     int numSettled_rev = 0;
     custom_priority_queue<Node> pq(g.v_max);
     custom_priority_queue<Node> pq_rev(g.v_max);
     vector<int> dist(g.v_max, INT_MAX);
     vector<int> dist_rev(g.v_max, INT_MAX);
-    pq.push(Node(s, 0));
-    pq_rev.push(Node(s, 0));
-    dist[s] = 0;
-    dist_rev[s] = 0;
+    init(g, pq, dist, s);
+    init(g_rev, pq_rev, dist_rev, s);
     bool finished = false;
     bool finished_rev = false;
     int j = -1;
@@ -350,15 +267,15 @@ vector<int> CoreOrLayerRange(Graph &g, Graph &g_rev, int s, int d) {
         if (numSettled == g.n)
             finished = true;
 
-        if (numSettled_rev == g_rev.n)
+        if (numSettled_rev == g.n)
             finished_rev = true;
 
         if (finished && finished_rev) {
             // case 1
             if (j == -1 || j_rev == -1)
-                return vector<int>{2, (int) ceil(constant)};
+                return {2, (int) ceil(constant)};
 
-            return vector<int>{1, max(j, j_rev)};
+            return {1, max(j, j_rev)};
         }
 
         if (!finished) {
@@ -370,7 +287,7 @@ vector<int> CoreOrLayerRange(Graph &g, Graph &g_rev, int s, int d) {
                     finished = true;
                 } else if (result[0] == 2) {
                     // case 2
-                    return vector<int>{2, result[1]};
+                    return {2, result[1]};
                 }
             }
             numSettled++;
@@ -385,7 +302,7 @@ vector<int> CoreOrLayerRange(Graph &g, Graph &g_rev, int s, int d) {
                     finished_rev = true;
                 } else if (result_rev[0] == 2) {
                     // case 3
-                    return vector<int>{3, result_rev[1]};
+                    return {3, result_rev[1]};
                 }
             }
             numSettled_rev++;
@@ -393,7 +310,7 @@ vector<int> CoreOrLayerRange(Graph &g, Graph &g_rev, int s, int d) {
     }
 }
 
-// Checked
+// returns a copy of g but with edges reversed
 Graph createGRev(Graph &g) {
     Graph g_rev(g.v_max, false);
     g_rev.addVertices(g.vertices);
@@ -414,14 +331,9 @@ Graph createGRev(Graph &g) {
     return g_rev;
 }
 
-vector<int> oneIterationLayerRange(Graph &g,
-                                   custom_priority_queue<Node> &pq,
-                                   vector<bool> &settled,
-                                   int numSettled,
-                                   vector<vector<int>> &farthestDistancesSeen,
-                                   double constant,
-                                   vector<int> &dist,
-                                   int d) {
+vector<int> oneIterationLayerRange(Graph &g, custom_priority_queue<Node> &pq, vector<bool> &settled,
+                                   int numSettled, vector<vector<int>> &farthestDistancesSeen, double constant,
+                                   vector<int> &dist, int d) {
     if (pq.empty()) {
         /*
          * Nothing left to search.
@@ -433,7 +345,7 @@ vector<int> oneIterationLayerRange(Graph &g,
          */
         int farthestDistanceSeen = farthestDistancesSeen[farthestDistancesSeen.size() - 1][0];
         int i_big = min(d, farthestDistanceSeen + (int) ceil(constant));
-        return vector<int>{2, i_big};
+        return {2, i_big};
     }
     int u = pq.top().node;
     pq.pop();
@@ -444,33 +356,34 @@ vector<int> oneIterationLayerRange(Graph &g,
     settled[u] = true;
 
     if (farthestDistancesSeen.empty() || dist[u] > farthestDistancesSeen[farthestDistancesSeen.size() - 1][0]) {
-        farthestDistancesSeen.push_back(vector<int>{dist[u], numSettled + 1});
+        farthestDistancesSeen.push_back({dist[u], numSettled + 1});
     }
 
-    int farthesDistanceSeen = farthestDistancesSeen[farthestDistancesSeen.size() - 1][0];
+    int farthestDistanceSeen = farthestDistancesSeen[farthestDistancesSeen.size() - 1][0];
 
     // case 1
     if (numSettled + 1 > 2.0 * g.n / 3.0)
-        return vector<int>{1, farthesDistanceSeen};
+        return {1, farthestDistanceSeen};
 
     // case 2
-    if (farthesDistanceSeen >= constant && sameCanonicalRange(farthestDistancesSeen, constant))
-        return vector<int>{2, farthesDistanceSeen};
+    if ((farthestDistanceSeen >= constant) && sameCanonicalRange(farthestDistancesSeen, constant))
+        return {2, farthestDistanceSeen};
 
     updateNeighbors(g, u, settled, pq, dist, d);
 
     return {};
 }
 
-// checked
-// Checks whether Vol_G(s, i - ceil[D/(3logn)]) and Vol_G(s, i) are in the same canonical range.
-// Two numbers are in the same canonical range if they lie in the same half-open interval
+// Checks whether Vol_G(s, i - ceil[D/(3logn)]) and Vol_G(s, i) are in the same
+// canonical range.
+// Two numbers are in the same canonical range if they lie in the same half-open
+// interval
 // [2^j, 2^{j+1}), where j is a non-negative integer.
 bool sameCanonicalRange(vector<vector<int>> &farthestDistancesSeen, double constant) {
     int i = farthestDistancesSeen[farthestDistancesSeen.size() - 1][0];
     int vol1 = farthestDistancesSeen[farthestDistancesSeen.size() - 1][1];
 
-    for (int j = farthestDistancesSeen.size() - 2; j >= 0; j--)
+    for (unsigned long j = farthestDistancesSeen.size() - 2; j >= 0; j--)
         if (farthestDistancesSeen[j][0] <= i - ceil(constant)) {
             int vol2 = farthestDistancesSeen[j][1];
             if (floor(log(vol1) / log(2)) == floor(log(vol2) / log(2)))
@@ -480,8 +393,8 @@ bool sameCanonicalRange(vector<vector<int>> &farthestDistancesSeen, double const
     return false;
 }
 
-// checked
-// returns the edges (u, v) where u is in ball and v is not in ball
+// {(u,v) in E_H | u in V_H(s,r) and v not in V_H(s,r)}
+
 vector<vector<int>> layer(Graph &g, vector<int> &ball) {
     vector<bool> contains(g.v_max, false);
     for (int i: ball)
@@ -490,22 +403,21 @@ vector<vector<int>> layer(Graph &g, vector<int> &ball) {
     for (int u: ball) {
         for (int v: g.adjacencyList[u]) {
             if (!contains[v])
-                edges.push_back(vector<int>{u, v});
+                edges.push_back({u, v});
         }
     }
     return edges;
 }
 
-// checked
-// returns all the vertices in g within a distance of r from source vertex s using Dijkstra's
+// returns all the vertices in g within a distance of r from source vertex s
+// using Dijkstra's
 vector<int> volume(Graph &g, int s, int r) {
     vector<int> output;
     vector<bool> settled(g.v_max, false);
     int numSettled = 0;
     custom_priority_queue<Node> pq(g.v_max);
     vector<int> dist(g.v_max, INT_MAX);
-    pq.push(Node(s, 0));
-    dist[s] = 0;
+    init(g, pq, dist, s);
 
     while (numSettled != g.n) {
         if (pq.empty())
@@ -526,31 +438,43 @@ vector<int> volume(Graph &g, int s, int r) {
     return output;
 }
 
-// checked
 vector<int> Dijkstra(Graph &g, int s) {
     vector<bool> settled(g.v_max, false);
+    int numSettled = 0;
     custom_priority_queue<Node> pq(g.v_max);
     vector<int> dist(g.v_max, INT_MAX);
-    pq.push(Node(s, 0));
-    dist[s] = 0;
+    init(g, pq, dist, s);
 
-    while (!pq.empty()) {
+    while (numSettled != g.n) {
+        if (pq.empty())
+            return dist;
         int u = pq.top().node;
-        pq.pop();
 
         if (settled[u])
             continue;
 
         settled[u] = true;
+        numSettled++;
 
         updateNeighbors(g, u, settled, pq, dist, INT_MAX);
     }
     return dist;
 }
 
-// checked
-void
-updateNeighbors(Graph &g, int u, vector<bool> &settled, custom_priority_queue<Node> &pq, vector<int> &dist, int d) {
+void init(Graph &g, custom_priority_queue<Node> &pq, vector<int> &dist, int s) {
+    for (int i = 0; i < g.v_max; i++) {
+        dist[i] = INT_MAX;
+    }
+    pq.push(Node(s, 0));
+    dist[s] = 0;
+}
+
+void updateNeighbors(Graph &g,
+                     int u,
+                     vector<bool> &settled,
+                     custom_priority_queue<Node> &pq,
+                     vector<int> &dist,
+                     int d) {
     for (unsigned long i = 0; i < g.adjacencyList[u].size(); i++) {
         int v = g.adjacencyList[u][i];
         if (!settled[v]) {

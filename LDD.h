@@ -37,7 +37,8 @@ vector<int> CoreOrLayerRange(Graph &g, Graph &g_rev, int s, int d);
 Graph createGRev(Graph &g);
 
 vector<int> oneIterationLayerRange(Graph &g, custom_priority_queue<Node> &pq, vector<bool> &settled,
-                                   int numSettled, vector<vector<int>> &farthestDistancesSeen, double constant, vector<int> &dist, int d);
+                                   int numSettled, vector<vector<int>> &farthestDistancesSeen, double constant,
+                                   vector<int> &dist, int d);
 
 bool sameCanonicalRange(vector<vector<int>> &farthestDistancesSeen, double constant);
 
@@ -49,5 +50,6 @@ vector<int> Dijkstra(Graph &g, int s);
 
 void updateNeighbors(Graph &g, int u, vector<bool> &settled, custom_priority_queue<Node> &pq, vector<int> &dist, int d);
 
+void init(Graph &g, custom_priority_queue<Node> &pq, vector<int> &dist, int s);
 
 #endif //SSSP_NEW_LDD_H
