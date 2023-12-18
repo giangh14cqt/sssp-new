@@ -10,6 +10,8 @@
 extern int SRC;
 extern bool WITH_LDD;
 
+vector<int> lasVegas(Graph &g);
+
 Graph readInput(ifstream &inputFile);
 
 void findReachable(Graph &g, int s, vector<bool> &reachable);

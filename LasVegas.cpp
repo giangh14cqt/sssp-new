@@ -4,8 +4,8 @@
 #include "LasVegas.h"
 
 bool CHECKS = false;
-int SRC;
-bool WITH_LDD;
+int SRC = 0;
+bool WITH_LDD = true;
 
 Graph readInput(ifstream &inputFile) {
     int g_size;
@@ -48,7 +48,6 @@ void findReachable(Graph &g, int s, vector<bool> &reachable) {
 }
 
 vector<int> bitScaling(Graph &g) {
-    cout << "Running Bit Scaling from source: " << SRC << " LDD = " << WITH_LDD << endl;
     Timer::startTimer();
     int minWeight = INT_MAX;
     for (int u: g.vertices)
@@ -56,10 +55,8 @@ vector<int> bitScaling(Graph &g) {
             minWeight = min(minWeight, g.weights[u][i]);
 
     if (minWeight >= 0) {
-//        cout << "Graph is non-negative" << endl;
-
         vector<int> dist = Dijkstra(g, SRC);
-        cout << "Finished: " << Timer::getDuration() << " ms" << endl;
+        cout << Timer::getDuration() << endl;
         return dist;
     }
 
@@ -115,7 +112,65 @@ vector<int> bitScaling(Graph &g) {
 
     vector<int> tree = getShortestPathTree(gFinal, SRC);
     vector<int> dist = getDistFromTree(g, tree);
-    cout << "Finished: " << Timer::getDuration() << " ms" << endl;
+    cout << Timer::getDuration() << endl;
+    return dist;
+}
+
+vector<int> lasVegas(Graph &g) {
+    Timer::startTimer();
+    int minWeight = INT_MAX;
+    for (int u: g.vertices)
+        for (unsigned long i = 0; i < g.adjacencyList[u].size(); ++i)
+            minWeight = min(minWeight, g.weights[u][i]);
+
+    if (minWeight >= 0) {
+        vector<int> dist = Dijkstra(g, SRC);
+        cout << Timer::getDuration() << endl;
+        return dist;
+    }
+    vector<int> phi(g.v_max);
+
+    while (minWeight < -1) {
+        Graph gScaledS(g, false);
+
+        for (int u: g.vertices) {
+            for (unsigned long i = 0; i < g.adjacencyList[u].size(); ++i) {
+                gScaledS.weights[u][i] = phi[u] - phi[g.adjacencyList[u][i]] + g.weights[u][i];
+//                if (gScaledS.weights[u][i] < -1)
+//                    throw_with_nested("Las Vegas produced an edge with weight less than -1");
+            }
+        }
+
+//        exit(0);
+
+        vector<int> phi_i = ScaleDown(gScaledS, gScaledS.n, -1 * minWeight / 2);
+
+        for (int u: g.vertices)
+            phi[u] += phi_i[u];
+
+        minWeight = INT_MAX;
+        for (int u: g.vertices)
+            for (unsigned long i = 0; i < g.adjacencyList[u].size(); ++i)
+                minWeight = min(minWeight, g.weights[u][i] + phi[u] - phi[g.adjacencyList[u][i]]);
+    }
+
+    Graph gFinal(g);
+
+    vector<int> tree = SPMain(gFinal, SRC);
+
+//    for (int u: gFinal.vertices) {
+//        for (unsigned long i = 0; i < gFinal.adjacencyList[u].size(); ++i) {
+//            gFinal.weights[u][i] += phi[u] - phi[gFinal.adjacencyList[u][i]];
+//
+//            if (gFinal.weights[u][i] < 0) {
+//                throw_with_nested("Apply phi outputted - existing negative edge");
+//            }
+//        }
+//    }
+//
+//    vector<int> tree = getShortestPathTree(gFinal, SRC);
+    vector<int> dist = getDistFromTree(g, tree);
+    cout << Timer::getDuration() << endl;
     return dist;
 }
 
@@ -656,7 +711,6 @@ vector<int> getShortestPathTree(Graph &g, int s) {
 }
 
 vector<int> bellmanFord(Graph &g) {
-    cout << "Running Bellman-Ford from source: " << SRC << " LDD = " << WITH_LDD << endl;
     Timer::startTimer();
     vector<int> dist(g.v_max);
     for (int i = 0; i < g.v_max; i++) {
@@ -686,7 +740,7 @@ vector<int> bellmanFord(Graph &g) {
             }
         }
     }
-    cout << "Finished: " << Timer::getDuration() << " ms." << endl;
+    cout << Timer::getDuration() << endl;
     return dist;
 }
 
