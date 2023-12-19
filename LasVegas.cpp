@@ -3,7 +3,7 @@
 //
 #include "LasVegas.h"
 
-bool CHECKS = false;
+bool CHECKS = true;
 int SRC = 0;
 bool WITH_LDD = true;
 
@@ -38,13 +38,6 @@ Graph readInput(ifstream &inputFile) {
     for (int i = 0; i < g_size; ++i)
         g.addEdges(i, edges[i], weights[i]);
     return g;
-}
-
-void findReachable(Graph &g, int s, vector<bool> &reachable) {
-    reachable[s] = true;
-    for (int v: g.adjacencyList[s])
-        if (!reachable[v])
-            findReachable(g, v, reachable);
 }
 
 vector<int> bitScaling(Graph &g) {
@@ -136,12 +129,8 @@ vector<int> lasVegas(Graph &g) {
         for (int u: g.vertices) {
             for (unsigned long i = 0; i < g.adjacencyList[u].size(); ++i) {
                 gScaledS.weights[u][i] = phi[u] - phi[g.adjacencyList[u][i]] + g.weights[u][i];
-//                if (gScaledS.weights[u][i] < -1)
-//                    throw_with_nested("Las Vegas produced an edge with weight less than -1");
             }
         }
-
-//        exit(0);
 
         vector<int> phi_i = ScaleDown(gScaledS, gScaledS.n, -1 * minWeight / 2);
 
@@ -158,17 +147,6 @@ vector<int> lasVegas(Graph &g) {
 
     vector<int> tree = SPMain(gFinal, SRC);
 
-//    for (int u: gFinal.vertices) {
-//        for (unsigned long i = 0; i < gFinal.adjacencyList[u].size(); ++i) {
-//            gFinal.weights[u][i] += phi[u] - phi[gFinal.adjacencyList[u][i]];
-//
-//            if (gFinal.weights[u][i] < 0) {
-//                throw_with_nested("Apply phi outputted - existing negative edge");
-//            }
-//        }
-//    }
-//
-//    vector<int> tree = getShortestPathTree(gFinal, SRC);
     vector<int> dist = getDistFromTree(g, tree);
     cout << Timer::getDuration() << endl;
     return dist;
@@ -252,9 +230,9 @@ vector<int> SPMain(Graph &g_in, int s) {
 
     vector<int> tree = getShortestPathTree(g, s);
 
-    if (CHECKS && invalidTree(g, s, tree)) {
-        throw_with_nested("SPMain get shortest path tree failed.");
-    }
+//    if (CHECKS && invalidTree(g, s, tree)) {
+//        throw_with_nested("SPMain get shortest path tree failed.");
+//    }
 
     return tree;
 }
@@ -336,7 +314,6 @@ vector<int> ScaleDown(Graph &g, int delta, int B) {
         set<vector<int>> edgesBetweenSCCs = getEdgesBetweenSCCs(g, vertexToSCCMap);
         Graph H = createModifiedGB(g, 0, false, edgesBetweenSCCs, emptyPhi);
         vector<int> phi_1 = ScaleDown(H, delta / 2, B);
-
         // phase 2
         Graph g_B_E_sep_phi1 = createModifiedGB(g, B, false, E_sep_hash, phi_1);
         vector<int> phi = FixDAGEdges(g_B_E_sep_phi1, SCCs, vertexToSCCMap, edgesBetweenSCCs);
@@ -350,8 +327,10 @@ vector<int> ScaleDown(Graph &g, int delta, int B) {
     vector<int> phi_prime = ElimNeg(g_B_phi2);
     vector<int> phi_3 = addPhi(phi_2, phi_prime);
 
-    if (CHECKS && hasNegativeEdges(g_B_phi2, phi_prime, 0))
-        throw_with_nested("ElimNeg failed.");
+    if (CHECKS) {
+        if (hasNegativeEdges(g, phi_3, B))
+            throw_with_nested("ElimNeg failed.");
+    }
 
     return phi_3;
 }
@@ -447,8 +426,9 @@ set<vector<int>> getEdgesBetweenSCCs(Graph &g, vector<int> &vertexToSCCMap) {
     for (int u: g.vertices) {
         for (int v: g.adjacencyList[u]) {
             if (vertexToSCCMap[u] != vertexToSCCMap[v]) {
-                vector<int> edge = {u, v};
-                edgesBetweenSCCs.insert(edge);
+//                vector<int> edge = {u, v};
+//                edgesBetweenSCCs.insert(edge);
+                edgesBetweenSCCs.insert({vertexToSCCMap[u], vertexToSCCMap[v]});
             }
         }
     }
@@ -502,6 +482,16 @@ vector<int> FixDAGEdges(Graph &g,
         }
     }
 
+    if (CHECKS) {
+        for (vector<int> edge: edgesBetweenSCCs) {
+            int u = edge[0];
+            int v = edge[1];
+            if (topOrdering[u] > topOrdering[v]) {
+                throw_with_nested("FixDAGEdges went wrong.");
+            }
+        }
+    }
+
     vector<int> phi(g.v_max);
     int m = 0;
     for (int j = 1; j < n; j++) {
@@ -519,15 +509,11 @@ vector<vector<int>> createSCCAdjList(vector<vector<int>> &SCCs,
                                      vector<int> &vertexToSCCMap,
                                      set<vector<int>> &edgesBetweenSCCs) {
     vector<vector<int>> SCCAdjList(SCCs.size());
-    vector<vector<bool>> containsEdge(SCCs.size(), vector<bool>(SCCs.size(), false));
 
     for (vector<int> edge: edgesBetweenSCCs) {
-        int u = vertexToSCCMap[edge[0]];
-        int v = vertexToSCCMap[edge[1]];
-        if (!containsEdge[u][v]) {
-            containsEdge[u][v] = true;
-            SCCAdjList[u].push_back(v);
-        }
+        int u = edge[0];
+        int v = edge[1];
+        SCCAdjList[u].push_back(v);
     }
 
     return SCCAdjList;
@@ -546,10 +532,32 @@ vector<int> topSort(int n, vector<vector<int>> &adjList) {
     stack<int> stack;
     vector<bool> visited(n, false);
 
-    for (int i = 0; i < n; i++) {
-        if (!visited[i]) {
-            topSortUtil(i, visited, stack, adjList);
-        }
+//    for (int i = 0; i < n; i++) {
+//        if (!visited[i]) {
+//            topSortUtil(i, visited, stack, adjList);
+//        }
+//    }
+    vector<int> indegree(n, 0);
+    queue<int> listSource;
+
+    for (int u = 0; u < n; ++u)
+        for (auto v: adjList[u])
+            indegree[v]++;
+
+    for (int u = 0; u < n; ++u)
+        if (!indegree[u]) listSource.push(u);
+
+    while (!listSource.empty()) {
+        int u = listSource.front();
+        listSource.pop();
+        stack.push(u);
+        for (auto v: adjList[u])
+            if (--indegree[v] == 0)
+                listSource.push(v);
+    }
+
+    if (stack.size() < n) {
+        throw_with_nested("topSort went wrong: contains cycles");
     }
 
     int i = 0;

@@ -78,8 +78,6 @@ public:
 
             vertices.push_back(g.v_max);
             containsVertex.push_back(true);
-            adjacencyList.push_back(vector<int>());
-            weights.push_back(vector<int>());
             adjacencyList[g.v_max].reserve(g.n);
             weights[g.v_max].reserve(g.n);
             for (int i = 0; i < g.n; ++i) {
@@ -140,20 +138,26 @@ public:
 
     void displayGraph() {
         cout << "Displaying graph:" << endl;
-        for (int i = 0; i < v_max; i++) {
-            if (containsVertex[i]) {
-                cout << "Vertex " << i << " has out edges: ";
-                for (unsigned long j = 0; j < adjacencyList[i].size(); j++) {
-                    cout << adjacencyList[i][j] << " with weight " << weights[i][j] << ", ";
-                }
-                cout << endl;
+//        for (int i = 0; i < v_max; i++) {
+//            if (containsVertex[i]) {
+//                cout << "Vertex " << i << " has out edges: ";
+//                for (unsigned long j = 0; j < adjacencyList[i].size(); j++) {
+//                    cout << adjacencyList[i][j] << " with weight " << weights[i][j] << ", ";
+//                }
+//                cout << endl;
+//            }
+//        }
+        for (int v: vertices) {
+            for (unsigned long j = 0; j < adjacencyList[v].size(); j++) {
+                cout << v << ' ' << adjacencyList[v][j] << endl;
             }
         }
     }
 
     // Run Tarjan's algorithm to find SCCs
-    // SCC only run on graphs where n == v_max, so needs to create mapping from vertices to [n] first to work
     vector<vector<int>> SCC() {
+        vector<vector<int>> SCCverts;
+
         vector<int> vertsToN = vector<int>(v_max, 0);
         vector<int> NtoVerts = vector<int>(n, 0);
 
@@ -162,56 +166,83 @@ public:
             NtoVerts[i] = vertices[i];
         }
 
-        vector<int> disc = vector<int>(n, -1);
-        vector<int> low = vector<int>(n, -1);
+        vector<int> disc = vector<int>(n, 0);
+        vector<int> low = vector<int>(n, 0);
         time = 0;
 
         vector<bool> stackMember = vector<bool>(n, false);
         stack<int> st;
 
-        vector<vector<int>> SCCverts;// = vector<vector<int>>();
-
         for (int i = 0; i < n; ++i) {
             if (disc[i] == -1) {
-                vector<vector<int>> SCCTmp = SCCUtil(i, low, disc, stackMember, st, vertsToN, NtoVerts);
-                for (const vector<int> &SCC: SCCTmp)
-                    SCCverts.push_back(SCC);
+//                vector<vector<int>> SCCTmp = SCCUtil(i, low, disc, stackMember, st, vertsToN, NtoVerts);
+//                for (const vector<int> &SCC: SCCTmp)
+//                    SCCverts.push_back(SCC);
+                dfs(i, low, disc, stackMember, st, vertsToN, NtoVerts, SCCverts);
             }
         }
+
         return SCCverts;
+    }
+
+    void dfs(int u, vector<int> &low, vector<int> &disc, vector<bool> &stackMember, stack<int> &st,
+             vector<int> &vertsToN, vector<int> &NtoVerts, vector<vector<int>> &SCCverts) {
+        disc[u] = low[u] = ++time;
+        st.push(u);
+        for (int v_true : adjacencyList[NtoVerts[u]]) {
+            int v = vertsToN[v_true];
+            if (stackMember[v]) continue;
+            if (!disc[v]){
+                dfs(v, low, disc, stackMember, st, vertsToN, NtoVerts, SCCverts);
+                low[u] = min(low[u], low[v]);
+            }
+            else low[u] = min(low[u], disc[v]);
+        }
+        if (low[u] == disc[u]) {
+            vector<int> SCC;
+            int v;
+            do {
+                v = st.top();
+                st.pop();
+                stackMember[v] = true;
+                SCC.push_back(v);
+            }
+            while (v != u);
+            SCCverts.push_back(SCC);
+        }
     }
 
     vector<vector<int>> SCCUtil(int u, vector<int> &low, vector<int> &disc, vector<bool> &stackMember, stack<int> &st,
                                 vector<int> &vertsToN, vector<int> &NtoVerts) {
-        vector<vector<int>> SCCverts = vector<vector<int>>();
-        disc[u] = low[u] = time;
-        time++;
-        stackMember[u] = true;
-        st.push(u);
 
-        for (int v_true: adjacencyList[NtoVerts[u]]) {
-            int v = vertsToN[v_true];
-            if (disc[v] == -1) {
-                vector<vector<int>> SCCTmp = SCCUtil(v, low, disc, stackMember, st, vertsToN, NtoVerts);
-                SCCverts.reserve(SCCverts.size() + SCCTmp.size());
-                SCCverts.insert(SCCverts.end(), SCCTmp.begin(), SCCTmp.end());
-                low[u] = min(low[u], low[v]);
-            } else if (stackMember[v])
-                low[u] = min(low[u], disc[v]);
-        }
-
-        int w = -1;
-        if (low[u] == disc[u]) {
-            vector<int> SCC = vector<int>();
-            while (w != u) {
-                w = st.top();
-                st.pop();
-                SCC.push_back(NtoVerts[w]);
-                stackMember[w] = false;
-            }
-            SCCverts.push_back(SCC);
-        }
-        return SCCverts;
+//        vector<vector<int>> SCCverts;
+//        disc[u] = low[u] = time;
+//        time++;
+//        stackMember[u] = true;
+//        st.push(u);
+//
+//        for (int v_true: adjacencyList[NtoVerts[u]]) {
+//            int v = vertsToN[v_true];
+//            if (disc[v] == -1) {
+//                vector<vector<int>> SCCTmp = SCCUtil(v, low, disc, stackMember, st, vertsToN, NtoVerts);
+//                SCCverts.insert(SCCverts.end(), SCCTmp.begin(), SCCTmp.end());
+//                low[u] = min(low[u], low[v]);
+//            } else if (stackMember[v])
+//                low[u] = min(low[u], disc[v]);
+//        }
+//
+//        int w = -1;
+//        if (low[u] == disc[u]) {
+//            vector<int> SCC = vector<int>();
+//            while (w != u) {
+//                w = st.top();
+//                st.pop();
+//                SCC.push_back(NtoVerts[w]);
+//                stackMember[w] = false;
+//            }
+//            SCCverts.push_back(SCC);
+//        }
+//        return SCCverts;
     }
 
     // Returns true if the graph has a negative weight cycle.

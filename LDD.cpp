@@ -440,26 +440,25 @@ vector<int> volume(Graph &g, int s, int r) {
 
 vector<int> Dijkstra(Graph &g, int s) {
     vector<bool> settled(g.v_max, false);
-    int numSettled = 0;
     custom_priority_queue<Node> pq(g.v_max);
     vector<int> dist(g.v_max, INT_MAX);
-    init(g, pq, dist, s);
+    pq.push(Node(s, 0));
+    dist[s] = 0;
 
-    while (numSettled != g.n) {
-        if (pq.empty())
-            return dist;
+    while (!pq.empty()) {
         int u = pq.top().node;
+        pq.pop();
 
         if (settled[u])
             continue;
 
         settled[u] = true;
-        numSettled++;
 
         updateNeighbors(g, u, settled, pq, dist, INT_MAX);
     }
     return dist;
 }
+
 
 void init(Graph &g, custom_priority_queue<Node> &pq, vector<int> &dist, int s) {
     for (int i = 0; i < g.v_max; i++) {
@@ -469,12 +468,7 @@ void init(Graph &g, custom_priority_queue<Node> &pq, vector<int> &dist, int s) {
     dist[s] = 0;
 }
 
-void updateNeighbors(Graph &g,
-                     int u,
-                     vector<bool> &settled,
-                     custom_priority_queue<Node> &pq,
-                     vector<int> &dist,
-                     int d) {
+void updateNeighbors(Graph &g, int u, vector<bool> &settled, custom_priority_queue<Node> &pq, vector<int> &dist, int d) {
     for (unsigned long i = 0; i < g.adjacencyList[u].size(); i++) {
         int v = g.adjacencyList[u][i];
         if (!settled[v]) {
