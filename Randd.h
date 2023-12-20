@@ -25,6 +25,15 @@ public:
         return inst;
     }
 
+    vector<int> randomSubset(vector<int> &set, int k) {
+        vector<int> subset(k);
+        for (int i = 0; i < k; i++) {
+            int index = GenInt(0, set.size() - 1);
+            subset[i] = set[index];
+        }
+        return subset;
+    }
+
     // Seed the random number generator.
     static void Seed() {
         srand(time(nullptr));

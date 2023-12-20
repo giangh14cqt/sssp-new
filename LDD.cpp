@@ -4,6 +4,8 @@
 #include "LDD.h"
 
 const int LDD_BASE_CASE = 10;
+const int constant_c = 1;
+int gn_global = 0;
 
 
 vector<vector<int>> preLDD(Graph &g, int d) {
@@ -78,6 +80,112 @@ vector<vector<int>> LDD(Graph &g, int d) {
     }
 
     throw_with_nested("LowDiamDecomposition failed.");
+}
+
+
+vector<vector<int>> LDDRework(Graph &g0, int d) {
+    Graph g(g0, false);
+    Graph g_rev = createGRev(g);
+    set<vector<int>> e_sep;
+
+    int k = constant_c * int(log2(gn_global));
+    vector<int> randomVetices = Random::Get().randomSubset(g.vertices, k);
+
+    vector<vector<int>> ball_g_in(randomVetices.size());
+    for (int i = 0; i < randomVetices.size(); ++i) {
+        ball_g_in[i] = volume(g, randomVetices[i], d / 4);
+        ball_g_in[i] = vertexUnion(ball_g_in[i], randomVetices);
+    }
+    vector<vector<int>> ball_g_out(randomVetices.size());
+    for (int i = 0; i < randomVetices.size(); ++i) {
+        ball_g_out[i] = volume(g_rev, randomVetices[i], d / 4);
+        ball_g_out[i] = vertexUnion(ball_g_out[i], randomVetices);
+    }
+
+    queue<int> lightNodeV;
+    for (int i = 0; i < ball_g_in.size(); ++i)
+        if (ball_g_in[i].size() < 0.5 * g.n && ball_g_out[i].size() < 0.5 * g.n)
+            lightNodeV.push(i);
+
+    random_device rd;
+    mt19937 gen(rd());
+    geometric_distribution<int> distr(min(1.0, 80.0 * log2(g.n) / d));
+    while (!lightNodeV.empty()) {
+        int v = g0.vertices[lightNodeV.front()];
+        lightNodeV.pop();
+
+        if (!g.containsVertex[v])
+            continue;
+
+        int rv = distr(gen);
+        vector<int> ball_in = volume(g, v, rv);
+        vector<int> ball_out = volume(g_rev, v, rv);
+        vector<vector<int>> boun = boundary(g, g_rev, ball_in, ball_out);
+//        if (rv > d / 4 || ball_in.size() > 0.7 * g.n || ball_out.size() > 0.7 * g.n) {
+//            cout << "Rare case" << endl;
+//            return g.adjacencyList;
+//        }
+        vector<int> mergeBall = vertexUnion(ball_in, ball_out);
+        set<int> mergeBallSet(mergeBall.begin(), mergeBall.end());
+        mergeBall = vector<int>(mergeBallSet.begin(), mergeBallSet.end());
+        Graph subGraph = getSubGraph(g, mergeBall, false);
+//        cout << "mergeBall size: " << mergeBall.size() << endl;
+//        cout << "g_size: " << g.vertices.size() << endl;
+//        cout << "subGraph_size: " << subGraph.vertices.size() << endl;
+//        for (int i = 0; i < ball_in.size(); ++i)
+//            cout << ball_in[i] << ' ';
+//        cout << endl;
+//        for (int i = 0; i < ball_out.size(); ++i)
+//            cout << ball_out[i] << ' ';
+//        cout << endl;
+//        for (int i = 0; i < subGraph.vertices.size(); ++i)
+//            cout << subGraph.vertices[i] << ' ';
+//        cout << endl;
+//        cout << rv << endl;
+//        cout << endl;
+//        if (g0.n == 3 && d == 289) { exit(0); }
+        vector<vector<int>> e_recurse = LDDRework(subGraph, d);
+        Timer::startDebugTimer();
+//        e_sep = edgeUnion(e_sep, boun, e_recurse);
+        e_sep.insert(boun.begin(), boun.end());
+        e_sep.insert(e_recurse.begin(), e_recurse.end());
+        Timer::stopDebugTimer();
+        g.removeVertices(mergeBall);
+    }
+
+//    if (!g.vertices.empty()) {
+//        int arbitraryVertex = g0.vertices[0];
+//        vector<int> ball_in = volume(g0, arbitraryVertex, d / 2);
+//        vector<int> ball_out = volume(g_rev, arbitraryVertex, d / 2);
+//        set<int> vertices(g.vertices.begin(), g.vertices.end());
+//        set<int> ball_in_set(ball_in.begin(), ball_in.end());
+//        set<int> ball_out_set(ball_out.begin(), ball_out.end());
+//        if (!includes(vertices.begin(), vertices.end(), ball_in_set.begin(), ball_in_set.end()) ||
+//            !includes(vertices.begin(), vertices.end(), ball_out_set.begin(), ball_out_set.end())) {
+//            cout << "Rare case 2" << endl;
+//            return g.adjacencyList;
+//        }
+//    }
+
+    return vector<vector<int>>(e_sep.begin(), e_sep.end());
+}
+
+vector<vector<int>> boundary(Graph &g, Graph &g_rev, vector<int> &ball_in, vector<int> &ball_out) {
+    set<vector<int>> edges;
+    for (int u: ball_out) {
+        for (int v: g.adjacencyList[u]) {
+            if (find(ball_out.begin(), ball_out.end(), v) == ball_out.end())
+                edges.insert({u, v});
+        }
+    }
+    for (int u: ball_in) {
+        for (int v: g_rev.adjacencyList[u]) {
+            if (find(ball_in.begin(), ball_in.end(), v) == ball_in.end())
+                edges.insert({v, u});
+        }
+    }
+
+    return vector<vector<int>>(edges.begin(), edges.end());
 }
 
 vector<vector<int>> revEdges(vector<vector<int>> &edges) {
@@ -175,7 +283,8 @@ vector<vector<int>> RandomTrim(Graph &g, Graph &g_rev, int s, int d) {
 Graph getSubGraph(Graph &g, vector<int> &ball, bool setMinus) {
     vector<bool> contains(g.v_max, false);
     for (int i: ball)
-        contains[i] = true;
+        if (g.containsVertex[i])
+            contains[i] = true;
 
     vector<int> vert;
     for (int v: g.vertices)
@@ -414,15 +523,10 @@ vector<vector<int>> layer(Graph &g, vector<int> &ball) {
 vector<int> volume(Graph &g, int s, int r) {
     vector<int> output;
     vector<bool> settled(g.v_max, false);
-    int numSettled = 0;
-    custom_priority_queue<Node> pq(g.v_max);
+    custom_priority_queue<Node> pq(g.n);
     vector<int> dist(g.v_max, INT_MAX);
     init(g, pq, dist, s);
-
-    while (numSettled != g.n) {
-        if (pq.empty())
-            return output;
-
+    while (!pq.empty()) {
         int u = pq.top().node;
         pq.pop();
 
@@ -431,11 +535,56 @@ vector<int> volume(Graph &g, int s, int r) {
 
         output.push_back(u);
         settled[u] = true;
-        numSettled++;
 
         updateNeighbors(g, u, settled, pq, dist, r);
     }
     return output;
+}
+
+// returns all the vertices in g within a distance of r from source vertex s
+// using Dijkstra's
+vector<int> volume2(Graph &g, int s, int r) {
+    vector<int> output;
+    vector<bool> settled(g.n, false);
+    custom_priority_queue<Node> pq(g.n);
+    vector<int> VerToN(g.v_max, -1);
+    for (int i = 0; i < g.vertices.size(); ++i) {
+        VerToN[g.vertices[i]] = i;
+    }
+    vector<int> dist(g.n, INT_MAX);
+    s = VerToN[s];
+    init(g, pq, dist, s);
+    while (!pq.empty()) {
+        int u = pq.top().node;
+        pq.pop();
+
+        if (settled[u] || dist[u] > r)
+            continue;
+
+        output.push_back(g.vertices[u]);
+        settled[u] = true;
+
+        updateNeighbors2(g, u, VerToN, settled, pq, dist, r);
+    }
+    return output;
+}
+
+void updateNeighbors2(Graph &g, int u,
+                      vector<int> &VerToN, vector<bool> &settled,
+                      custom_priority_queue<Node> &pq, vector<int> &dist,
+                      int d) {
+    int u_real = g.vertices[u];
+    for (unsigned long i = 0; i < g.adjacencyList[u_real].size(); i++) {
+        int v_real = g.adjacencyList[u_real][i];
+        int v = VerToN[v_real];
+        if (!settled[v]) {
+            dist[v] = min(dist[v], dist[u] + g.weights[u_real][i]);
+
+            // only want to process nodes within a distance of d from the source
+            if (dist[v] <= d)
+                pq.push(Node(v, dist[v]));
+        }
+    }
 }
 
 vector<int> Dijkstra(Graph &g, int s) {
@@ -468,13 +617,14 @@ void init(Graph &g, custom_priority_queue<Node> &pq, vector<int> &dist, int s) {
     dist[s] = 0;
 }
 
-void updateNeighbors(Graph &g, int u, vector<bool> &settled, custom_priority_queue<Node> &pq, vector<int> &dist, int d) {
+void updateNeighbors(Graph &g, int u,
+                     vector<bool> &settled,
+                     custom_priority_queue<Node> &pq,
+                     vector<int> &dist, int d) {
     for (unsigned long i = 0; i < g.adjacencyList[u].size(); i++) {
         int v = g.adjacencyList[u][i];
         if (!settled[v]) {
-            int newDistance = dist[u] + g.weights[u][i];
-
-            dist[v] = min(dist[v], newDistance);
+            dist[v] = min(dist[v], dist[u] + g.weights[u][i]);
 
             // only want to process nodes within a distance of d from the source
             if (dist[v] <= d)

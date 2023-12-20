@@ -136,6 +136,41 @@ public:
         weights[v] = vector<int>(outWeights.begin(), outWeights.end());
     }
 
+    void removeVertices(vector<int> &ball) {
+        for (int v: ball) {
+            if (containsVertex[v]) {
+                containsVertex[v] = false;
+                n--;
+            }
+        }
+        for (int v: vertices)
+            if (!containsVertex[v]) {
+                adjacencyList[v].clear();
+                weights[v].clear();
+            } else {
+                vector<int> newOutVertices;
+                vector<int> newOutWeights;
+                for (int i = 0; i < adjacencyList[v].size(); ++i) {
+                    int outV = adjacencyList[v][i];
+                    if (containsVertex[outV]) {
+                        newOutVertices.push_back(outV);
+                        newOutWeights.push_back(weights[v][i]);
+                    }
+                }
+                adjacencyList[v] = newOutVertices;
+                weights[v] = newOutWeights;
+            }
+        vector<int> newVertices(n);
+        int i = 0;
+        for (int v: vertices) {
+            if (containsVertex[v]) {
+                newVertices[i] = v;
+                i++;
+            }
+        }
+        vertices = newVertices;
+    }
+
     void displayGraph() {
         cout << "Displaying graph:" << endl;
 //        for (int i = 0; i < v_max; i++) {
@@ -189,14 +224,13 @@ public:
              vector<int> &vertsToN, vector<int> &NtoVerts, vector<vector<int>> &SCCverts) {
         disc[u] = low[u] = ++time;
         st.push(u);
-        for (int v_true : adjacencyList[NtoVerts[u]]) {
+        for (int v_true: adjacencyList[NtoVerts[u]]) {
             int v = vertsToN[v_true];
             if (stackMember[v]) continue;
-            if (!disc[v]){
+            if (!disc[v]) {
                 dfs(v, low, disc, stackMember, st, vertsToN, NtoVerts, SCCverts);
                 low[u] = min(low[u], low[v]);
-            }
-            else low[u] = min(low[u], disc[v]);
+            } else low[u] = min(low[u], disc[v]);
         }
         if (low[u] == disc[u]) {
             vector<int> SCC;
@@ -206,8 +240,7 @@ public:
                 st.pop();
                 stackMember[v] = true;
                 SCC.push_back(v);
-            }
-            while (v != u);
+            } while (v != u);
             SCCverts.push_back(SCC);
         }
     }

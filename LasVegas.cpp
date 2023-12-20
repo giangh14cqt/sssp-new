@@ -110,6 +110,7 @@ vector<int> bitScaling(Graph &g) {
 }
 
 vector<int> lasVegas(Graph &g) {
+    gn_global = g.n;
     Timer::startTimer();
     int minWeight = INT_MAX;
     for (int u: g.vertices)
@@ -122,7 +123,7 @@ vector<int> lasVegas(Graph &g) {
         return dist;
     }
     vector<int> phi(g.v_max);
-
+    WITH_LDD = false;
     while (minWeight < -1) {
         Graph gScaledS(g, false);
 
@@ -142,6 +143,8 @@ vector<int> lasVegas(Graph &g) {
             for (unsigned long i = 0; i < g.adjacencyList[u].size(); ++i)
                 minWeight = min(minWeight, g.weights[u][i] + phi[u] - phi[g.adjacencyList[u][i]]);
     }
+
+    WITH_LDD = true;
 
     Graph gFinal(g);
 
@@ -303,7 +306,7 @@ vector<int> ScaleDown(Graph &g, int delta, int B) {
         // phase 0
         vector<vector<int>> E_sep;
         if (WITH_LDD)
-            E_sep = SPmainLDD(g_b_nneg, int(4 * d * B));
+            E_sep = SPmainLDD(g_b_nneg, int(d * B));
 
         set<vector<int>> E_sep_hash(E_sep.begin(), E_sep.end());
         Graph g_B_Esep = createModifiedGB(g, B, false, E_sep_hash, emptyPhi);
@@ -339,27 +342,29 @@ vector<vector<int>> SPmainLDD(Graph &g, int diameter) {
     vector<vector<int>> E_sep;
 
     // first remove all the large edges in G
-    Graph largeEdgesRemoved(g.v_max, false);
-    largeEdgesRemoved.addVertices(g.vertices);
-
-    for (int v: g.vertices) {
-        vector<int> outVertices;
-        vector<int> weights;
-
-        for (unsigned long i = 0; i < g.adjacencyList[v].size(); i++) {
-            if (g.weights[v][i] > diameter) {
-                // edge is too big, can add to E_sep
-                vector<int> edge = {v, g.adjacencyList[v][i]};
-                E_sep.push_back(edge);
-            } else {
-                outVertices.push_back(g.adjacencyList[v][i]);
-                weights.push_back(g.weights[v][i]);
-            }
-        }
-
-        largeEdgesRemoved.addEdges(v, outVertices, weights);
-    }
-    vector<vector<int>> LDD = preLDD(largeEdgesRemoved, diameter);
+//    Graph largeEdgesRemoved(g.v_max, false);
+//    largeEdgesRemoved.addVertices(g.vertices);
+//
+//    for (int v: g.vertices) {
+//        vector<int> outVertices;
+//        vector<int> weights;
+//
+//        for (unsigned long i = 0; i < g.adjacencyList[v].size(); i++) {
+//            if (g.weights[v][i] > diameter) {
+//                // edge is too big, can add to E_sep
+//                vector<int> edge = {v, g.adjacencyList[v][i]};
+//                E_sep.push_back(edge);
+//            } else {
+//                outVertices.push_back(g.adjacencyList[v][i]);
+//                weights.push_back(g.weights[v][i]);
+//            }
+//        }
+//
+//        largeEdgesRemoved.addEdges(v, outVertices, weights);
+//    }
+//    vector<vector<int>> LDD = preLDD(largeEdgesRemoved, diameter);
+//    cout << diameter << endl;
+    vector<vector<int>> LDD = LDDRework(g, diameter);
     E_sep.insert(E_sep.end(), LDD.begin(), LDD.end());
 
     return E_sep;
