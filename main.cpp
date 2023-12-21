@@ -1,26 +1,23 @@
 #include "LasVegas.h"
 
+bool CHECK_RESULT = false;
+const char *optionalFlag = "--source=";
+
 int main(int argc, char *argv[]) {
-    string filename = "../graph/5000_25.txt";
-//    WITH_LDD = true;
-//    string filename = argv[1];
-//    if (argc > 2)
-//        SRC = stoi(argv[3]);
-//    if (argc == 4)
-//        WITH_LDD = stoi(argv[2]);
+//    string filename = "../graph/1000_1.txt";
+    string filename = argv[1];
+
+    for (int i = 0; i < argc; i++) {
+        if (strcmp(argv[i], "-c") == 0)
+            CHECK_RESULT = true;
+        if (strncmp(argv[i], optionalFlag, strlen(optionalFlag)) == 0) {
+            SRC = stoi(argv[i] + strlen(optionalFlag));
+        }
+    }
+
     Random::Get().Seed();
     ifstream inputFile(filename);
     Graph g = readInput(inputFile);
-    vector<int> BellmanFord = bellmanFord(g);
-//    Timer::startTimer();
-//    vector<vector<int>> pre_ldd = preLDD(g, 100);
-//    cout << "PreLDD: " << Timer::getDuration() << endl;
-//    Timer::startTimer();
-//    vector<vector<int>> ldd_reword = LDDRework(g, 100);
-//    cout << "LDDRework: " << Timer::getDuration() << endl;
-//    cout << "Debug: " << Timer::getDebugDuration() << endl;
-
-//    vector<int> LasVegas = bitScaling(g);
 
     vector<int> LasVegasReal;
     try {
@@ -29,13 +26,17 @@ int main(int argc, char *argv[]) {
         cout << msg << endl;
         return 0;
     }
-    for (unsigned long i = 0; i < BellmanFord.size(); i++) {
-//        cout << BellmanFord[i] << " " << LasVegasReal[i] << " " << LasVegas[i] << endl;
-//        cout << BellmanFord[i] << " " << LasVegasReal[i] << endl;
-        if (LasVegasReal[i] != BellmanFord[i]) {
-            cout << "Failed: Bellman-Ford and Las Vegas are not equal" << endl;
-            return 0;
+
+    if (CHECK_RESULT) {
+        vector<int> BellmanFord = bellmanFord(g);
+
+        for (unsigned long i = 0; i < BellmanFord.size(); i++) {
+            if (LasVegasReal[i] != BellmanFord[i]) {
+                cout << "Failed: Bellman-Ford and Las Vegas are not equal" << endl;
+                return 0;
+            }
         }
+        cout << "Success: Bellman-Ford and Las Vegas are equal" << endl;
     }
     return 0;
 }

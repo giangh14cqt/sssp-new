@@ -3,9 +3,9 @@
 //
 #include "LasVegas.h"
 
-bool CHECKS = true;
+bool CHECKS = false;
 int SRC = 0;
-bool WITH_LDD = true;
+bool WITH_LDD;
 
 Graph readInput(ifstream &inputFile) {
     int g_size;
@@ -40,75 +40,6 @@ Graph readInput(ifstream &inputFile) {
     return g;
 }
 
-vector<int> bitScaling(Graph &g) {
-    Timer::startTimer();
-    int minWeight = INT_MAX;
-    for (int u: g.vertices)
-        for (unsigned long i = 0; i < g.adjacencyList[u].size(); ++i)
-            minWeight = min(minWeight, g.weights[u][i]);
-
-    if (minWeight >= 0) {
-        vector<int> dist = Dijkstra(g, SRC);
-        cout << Timer::getDuration() << endl;
-        return dist;
-    }
-
-    int precision = int(pow(2, int(logBase2(-1 * minWeight))));
-    vector<int> phi(g.v_max);
-
-    while (precision >= 1) {
-        Graph gScaledS(g, true);
-
-        for (int u: g.vertices) {
-            for (unsigned long i = 0; i < g.adjacencyList[u].size(); ++i) {
-                gScaledS.weights[u][i] =
-                        phi[u] - phi[g.adjacencyList[u][i]] + ceil(g.weights[u][i] / (double) precision);
-                if (gScaledS.weights[u][i] < -1)
-                    throw_with_nested("Bit scaling produced an edge with weight less than -1");
-            }
-        }
-
-        vector<int> tree = SPMain(gScaledS, g.v_max);
-        vector<int> dist(g.v_max + 1);
-
-        vector<bool> vectorTmp(g.v_max + 1, false);
-
-        getDistances(gScaledS, tree, dist, 0, g.v_max, vectorTmp);
-
-        if (CHECKS) {
-            verifyTree(gScaledS, tree, dist, g.v_max);
-
-            if (hasNegativeEdges(gScaledS, dist, 0))
-                throw_with_nested("Bit scaling produced a graph with negative edges");
-        }
-
-        for (int u: g.vertices)
-            if (precision == 1)
-                phi[u] += dist[u];
-            else
-                phi[u] = 2 * (phi[u] + dist[u]);
-
-        precision /= 2;
-    }
-
-    Graph gFinal(g);
-
-    for (int u: gFinal.vertices) {
-        for (unsigned long i = 0; i < gFinal.adjacencyList[u].size(); ++i) {
-            gFinal.weights[u][i] += phi[u] - phi[gFinal.adjacencyList[u][i]];
-
-            if (gFinal.weights[u][i] < 0) {
-                throw_with_nested("Apply phi outputted - existing negative edge");
-            }
-        }
-    }
-
-    vector<int> tree = getShortestPathTree(gFinal, SRC);
-    vector<int> dist = getDistFromTree(g, tree);
-    cout << Timer::getDuration() << endl;
-    return dist;
-}
-
 vector<int> lasVegas(Graph &g) {
     gn_global = g.n;
     Timer::startTimer();
@@ -123,7 +54,6 @@ vector<int> lasVegas(Graph &g) {
         return dist;
     }
     vector<int> phi(g.v_max);
-    WITH_LDD = false;
     while (minWeight < -1) {
         Graph gScaledS(g, false);
 
@@ -144,8 +74,6 @@ vector<int> lasVegas(Graph &g) {
                 minWeight = min(minWeight, g.weights[u][i] + phi[u] - phi[g.adjacencyList[u][i]]);
     }
 
-    WITH_LDD = true;
-
     Graph gFinal(g);
 
     vector<int> tree = SPMain(gFinal, SRC);
@@ -153,52 +81,6 @@ vector<int> lasVegas(Graph &g) {
     vector<int> dist = getDistFromTree(g, tree);
     cout << Timer::getDuration() << endl;
     return dist;
-}
-
-void verifyTree(Graph &g, vector<int> &tree, vector<int> &dist, int src) {
-    vector<vector<bool>> adjList(g.v_max, vector<bool>(g.v_max, false));
-    for (int u: g.vertices)
-        if (tree[u] != -1) {
-            if (!g.containsVertex[tree[u]])
-                throw_with_nested("Tree contains a vertex that does not exist");
-            adjList[tree[u]][u] = true;
-        }
-    vector<bool> visited(g.v_max, false);
-    if (containsCycles(g, adjList, src, visited))
-        throw_with_nested("Tree contains a cycle");
-    for (int u: g.vertices) {
-        for (unsigned long i = 0; i < g.adjacencyList[u].size(); ++i) {
-            int v = g.adjacencyList[u][i];
-            if (dist[v] > dist[u] + g.weights[u][i])
-                throw_with_nested("SPMain returned a tree that is not a shortest paths tree.");
-        }
-    }
-}
-
-bool containsCycles(Graph &g, vector<vector<bool>> &adjList, int src, vector<bool> &visited) {
-    if (visited[src])
-        return true;
-    visited[src] = true;
-    for (int v = 0; v < g.v_max; ++v)
-        if (adjList[src][v])
-            if (containsCycles(g, adjList, v, visited))
-                return true;
-    return false;
-}
-
-void getDistances(Graph &g, vector<int> &tree, vector<int> &dist, int curDis, int curVertex,
-                  vector<bool> &visited) {
-    if (!visited[curVertex]) {
-        dist[curVertex] = curDis;
-        visited[curVertex] = true;
-
-        for (unsigned long i = 0; i < g.adjacencyList[curVertex].size(); i++) {
-            int v = g.adjacencyList[curVertex][i];
-            if (tree[v] == curVertex) {
-                getDistances(g, tree, dist, curDis + g.weights[curVertex][i], v, visited);
-            }
-        }
-    }
 }
 
 vector<int> SPMain(Graph &g_in, int s) {
@@ -233,10 +115,6 @@ vector<int> SPMain(Graph &g_in, int s) {
 
     vector<int> tree = getShortestPathTree(g, s);
 
-//    if (CHECKS && invalidTree(g, s, tree)) {
-//        throw_with_nested("SPMain get shortest path tree failed.");
-//    }
-
     return tree;
 }
 
@@ -256,18 +134,6 @@ Graph getScaledGraph(Graph &g_in, int scaleFactor) {
     }
 
     return g;
-}
-
-bool invalidTree(Graph &g, int s, vector<int> &tree) {
-    for (unsigned long u = 0; u < tree.size(); ++u) {
-        if (g.containsVertex[u]) {
-            if (u != s && tree[u] == -1)
-                return true;
-            if (u == s && tree[u] != -1)
-                return true;
-        }
-    }
-    return false;
 }
 
 int roundPower2(int n) {
@@ -306,7 +172,7 @@ vector<int> ScaleDown(Graph &g, int delta, int B) {
         // phase 0
         vector<vector<int>> E_sep;
         if (WITH_LDD)
-            E_sep = SPmainLDD(g_b_nneg, int(d * B));
+            E_sep = LDDRework(g_b_nneg, int(d * B));
 
         set<vector<int>> E_sep_hash(E_sep.begin(), E_sep.end());
         Graph g_B_Esep = createModifiedGB(g, B, false, E_sep_hash, emptyPhi);
@@ -336,38 +202,6 @@ vector<int> ScaleDown(Graph &g, int delta, int B) {
     }
 
     return phi_3;
-}
-
-vector<vector<int>> SPmainLDD(Graph &g, int diameter) {
-    vector<vector<int>> E_sep;
-
-    // first remove all the large edges in G
-//    Graph largeEdgesRemoved(g.v_max, false);
-//    largeEdgesRemoved.addVertices(g.vertices);
-//
-//    for (int v: g.vertices) {
-//        vector<int> outVertices;
-//        vector<int> weights;
-//
-//        for (unsigned long i = 0; i < g.adjacencyList[v].size(); i++) {
-//            if (g.weights[v][i] > diameter) {
-//                // edge is too big, can add to E_sep
-//                vector<int> edge = {v, g.adjacencyList[v][i]};
-//                E_sep.push_back(edge);
-//            } else {
-//                outVertices.push_back(g.adjacencyList[v][i]);
-//                weights.push_back(g.weights[v][i]);
-//            }
-//        }
-//
-//        largeEdgesRemoved.addEdges(v, outVertices, weights);
-//    }
-//    vector<vector<int>> LDD = preLDD(largeEdgesRemoved, diameter);
-//    cout << diameter << endl;
-    vector<vector<int>> LDD = LDDRework(g, diameter);
-    E_sep.insert(E_sep.end(), LDD.begin(), LDD.end());
-
-    return E_sep;
 }
 
 bool hasNegativeEdges(Graph &g, vector<int> &phi, int B) {
@@ -431,8 +265,6 @@ set<vector<int>> getEdgesBetweenSCCs(Graph &g, vector<int> &vertexToSCCMap) {
     for (int u: g.vertices) {
         for (int v: g.adjacencyList[u]) {
             if (vertexToSCCMap[u] != vertexToSCCMap[v]) {
-//                vector<int> edge = {u, v};
-//                edgesBetweenSCCs.insert(edge);
                 edgesBetweenSCCs.insert({vertexToSCCMap[u], vertexToSCCMap[v]});
             }
         }
@@ -537,11 +369,6 @@ vector<int> topSort(int n, vector<vector<int>> &adjList) {
     stack<int> stack;
     vector<bool> visited(n, false);
 
-//    for (int i = 0; i < n; i++) {
-//        if (!visited[i]) {
-//            topSortUtil(i, visited, stack, adjList);
-//        }
-//    }
     vector<int> indegree(n, 0);
     queue<int> listSource;
 
@@ -575,17 +402,6 @@ vector<int> topSort(int n, vector<vector<int>> &adjList) {
     }
 
     return topOrdering;
-}
-
-void topSortUtil(int u, vector<bool> &visited, stack<int> &stack, vector<vector<int>> &adjList) {
-    visited[u] = true;
-
-    for (int v: adjList[u]) {
-        if (!visited[v]) {
-            topSortUtil(v, visited, stack, adjList);
-        }
-    }
-    stack.push(u);
 }
 
 /*
@@ -677,12 +493,13 @@ Graph createGs(Graph &g) {
         Gs.addEdges(u, g.adjacencyList[u], g.weights[u]);
     }
 
-    vector<int> edges(g.v_max);
-    vector<int> weights(g.v_max);
-    for (int i = 0; i < g.v_max; i++) {
-        edges[i] = i;
-        weights[i] = 0;
-    }
+    vector<int> edges(g.n);
+    vector<int> weights(g.n);
+    for (int i = 0; i < g.vertices.size(); i++) {
+            int v = g.vertices[i];
+            edges[i] = v;
+            weights[i] = 0;
+        }
     Gs.addEdges(s, edges, weights);
 
     return Gs;
@@ -724,7 +541,6 @@ vector<int> getShortestPathTree(Graph &g, int s) {
 }
 
 vector<int> bellmanFord(Graph &g) {
-    Timer::startTimer();
     vector<int> dist(g.v_max);
     for (int i = 0; i < g.v_max; i++) {
         dist[i] = INT_MAX;
@@ -753,7 +569,6 @@ vector<int> bellmanFord(Graph &g) {
             }
         }
     }
-    cout << Timer::getDuration() << endl;
     return dist;
 }
 

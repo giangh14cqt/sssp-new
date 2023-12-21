@@ -121,51 +121,33 @@ vector<vector<int>> LDDRework(Graph &g0, int d) {
         vector<int> ball_in = volume(g, v, rv);
         vector<int> ball_out = volume(g_rev, v, rv);
         vector<vector<int>> boun = boundary(g, g_rev, ball_in, ball_out);
-//        if (rv > d / 4 || ball_in.size() > 0.7 * g.n || ball_out.size() > 0.7 * g.n) {
+        if (rv > d / 4 || ball_in.size() > 0.7 * g.n || ball_out.size() > 0.7 * g.n) {
 //            cout << "Rare case" << endl;
-//            return g.adjacencyList;
-//        }
+            return g.adjacencyList;
+        }
         vector<int> mergeBall = vertexUnion(ball_in, ball_out);
         set<int> mergeBallSet(mergeBall.begin(), mergeBall.end());
         mergeBall = vector<int>(mergeBallSet.begin(), mergeBallSet.end());
         Graph subGraph = getSubGraph(g, mergeBall, false);
-//        cout << "mergeBall size: " << mergeBall.size() << endl;
-//        cout << "g_size: " << g.vertices.size() << endl;
-//        cout << "subGraph_size: " << subGraph.vertices.size() << endl;
-//        for (int i = 0; i < ball_in.size(); ++i)
-//            cout << ball_in[i] << ' ';
-//        cout << endl;
-//        for (int i = 0; i < ball_out.size(); ++i)
-//            cout << ball_out[i] << ' ';
-//        cout << endl;
-//        for (int i = 0; i < subGraph.vertices.size(); ++i)
-//            cout << subGraph.vertices[i] << ' ';
-//        cout << endl;
-//        cout << rv << endl;
-//        cout << endl;
-//        if (g0.n == 3 && d == 289) { exit(0); }
         vector<vector<int>> e_recurse = LDDRework(subGraph, d);
-        Timer::startDebugTimer();
-//        e_sep = edgeUnion(e_sep, boun, e_recurse);
         e_sep.insert(boun.begin(), boun.end());
         e_sep.insert(e_recurse.begin(), e_recurse.end());
-        Timer::stopDebugTimer();
         g.removeVertices(mergeBall);
     }
 
-//    if (!g.vertices.empty()) {
-//        int arbitraryVertex = g0.vertices[0];
-//        vector<int> ball_in = volume(g0, arbitraryVertex, d / 2);
-//        vector<int> ball_out = volume(g_rev, arbitraryVertex, d / 2);
-//        set<int> vertices(g.vertices.begin(), g.vertices.end());
-//        set<int> ball_in_set(ball_in.begin(), ball_in.end());
-//        set<int> ball_out_set(ball_out.begin(), ball_out.end());
-//        if (!includes(vertices.begin(), vertices.end(), ball_in_set.begin(), ball_in_set.end()) ||
-//            !includes(vertices.begin(), vertices.end(), ball_out_set.begin(), ball_out_set.end())) {
+    if (!g.vertices.empty()) {
+        int arbitraryVertex = g0.vertices[0];
+        vector<int> ball_in = volume(g0, arbitraryVertex, d / 2);
+        vector<int> ball_out = volume(g_rev, arbitraryVertex, d / 2);
+        set<int> vertices(g.vertices.begin(), g.vertices.end());
+        set<int> ball_in_set(ball_in.begin(), ball_in.end());
+        set<int> ball_out_set(ball_out.begin(), ball_out.end());
+        if (!includes(vertices.begin(), vertices.end(), ball_in_set.begin(), ball_in_set.end()) ||
+            !includes(vertices.begin(), vertices.end(), ball_out_set.begin(), ball_out_set.end())) {
 //            cout << "Rare case 2" << endl;
-//            return g.adjacencyList;
-//        }
-//    }
+            return g.adjacencyList;
+        }
+    }
 
     return vector<vector<int>>(e_sep.begin(), e_sep.end());
 }
